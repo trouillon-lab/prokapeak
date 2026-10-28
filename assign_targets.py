@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Assign MACS3 peaks to target genes through TSS and gene-start windows."""
+"""Assign MACS3 peaks to target genes through TSS and gene-start windows.
+Default mode checked against a reference run; the other modes checked on a small artificial genome."""
 import argparse
 import re
 from pathlib import Path
@@ -15,7 +16,7 @@ ap.add_argument("--peaks", required=True, nargs="+", help="MACS3 narrowPeak file
 ap.add_argument("--out", required=True, help="output folder; one <TF>_assigned_peaks.bed per peak file, one row per peak "
                 "x target gene: chrom, summit start, summit end, target, peak_score, target strand, signal, pscore, qscore, "
                 "target_chrom, target_start, target_end, peak_id, operon, anchor (TSS/start_codon), distance_to_anchor")
-ap.add_argument("--operons", help="operon BED6, start/end 1-based; name = operon id or Operon-mapper string")
+ap.add_argument("--operons", help="operon BED6; name = operon id or Operon-mapper string")
 ap.add_argument("--tss", help="TSS BED6 (TSS = end); name = <tss_id>|<locus_tags 5'->3'>, '.' = unlinked")
 ap.add_argument("--no-gene-start", action="store_true", help="no start-codon windows; units without a TSS are not assigned")
 ap.add_argument("--no-internal", action="store_true", help="no internal units (operon starts only)")
@@ -45,7 +46,7 @@ if a.operons:
     gc, gs, ge, gst, gl = (g[k].to_numpy() for k in ("chrom", "start", "end", "strand", "locus"))
     for r in op[~op.name.str.contains("type:gene", regex=False)].itertuples():
         oid = m.group(1) if (m := re.search(r"operon:([^|\]]+)", r.name)) else r.name
-        i = np.flatnonzero((gc == r.chrom) & (gst == r.strand) & (gs >= r.start) & (ge <= r.end))
+        i = np.flatnonzero((gc == r.chrom) & (gst == r.strand) & (gs > r.start) & (ge <= r.end))  # BED start 0-based
         genes = gl[i[np.argsort(gs[i] * (1 if r.strand == "+" else -1), kind="stable")]].tolist()
         for i in range(min(len(genes), 1 if a.no_internal else len(genes))):
             base.append(dict(operon=oid, internal=bool(i), genes=genes[i:]))

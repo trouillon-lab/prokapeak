@@ -5,6 +5,10 @@ probably regulate. A peak is assigned to a gene when its summit (the single base
 a window around that gene's transcription start site (TSS), or, where no TSS is known, around its start codon.
 Genes transcribed together in one operon are assigned together.
 
+Status: the default mode (operons + TSS map + start-codon fallback) reproduces a reference implementation exactly
+on two test sets. Runs without an operon file or without a TSS map, the options `--no-gene-start`, `--no-internal` and
+`--tss-to-gene`, the `CDS` fallback, plain operon ids and genomes with two chromosomes give the expected results
+on small artificial test data.
 
 ## Requirements
 
@@ -57,13 +61,13 @@ be distinct. An empty peak file gives an empty output file.
 
 ### `--operons` operon map (optional)
 
-BED-like, 6 tab-separated columns, no header, one row per operon. **Start is 1-based**, unlike standard BED.
+BED6, tab-separated, no header, one row per operon.
 
 | column | content |
 |---|---|
 | 1 chrom | chromosome |
-| 2 start | 1-based, inclusive: start of the operon's leftmost gene |
-| 3 end | 1-based, inclusive: end of the operon's rightmost gene |
+| 2 start | 0-based start of the operon's leftmost gene (GFF start − 1) |
+| 3 end | end of the operon's rightmost gene (= GFF end) |
 | 4 name | operon id, or an Operon-mapper string `[type:operon\|operon:<id>\|...]` (id = the `operon:` field); rows containing `type:gene` are skipped |
 | 5 score | ignored |
 | 6 strand | `+` or `-` |
