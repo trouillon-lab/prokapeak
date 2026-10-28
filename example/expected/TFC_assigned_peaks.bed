@@ -1,0 +1,10 @@
+chrom1	6275	6276	EX_0008	523	+	20.94	62.82	52.35	chrom1	6434	7046	TFC_peak_1	op5	start_codon	-159
+chrom1	12631	12632	EX_0014	519	+	20.77	62.31	51.92	chrom1	12705	14049	TFC_peak_2	op8	start_codon	-74
+chrom1	12631	12632	EX_0015	519	+	20.77	62.31	51.92	chrom1	14091	14832	TFC_peak_2	op8	start_codon	-74
+chrom1	12631	12632	EX_0016	519	+	20.77	62.31	51.92	chrom1	14846	15692	TFC_peak_2	op8	start_codon	-74
+chrom1	20790	20791	EX_0020	314	-	12.56	37.68	31.4	chrom1	19546	20665	TFC_peak_3	op11	TSS	-82
+chrom1	27102	27103	EX_0025	237	-	9.48	28.44	23.7	chrom1	25654	27151	TFC_peak_4	op13	start_codon	48
+chrom1	47358	47359	EX_0046	407	+	16.3	48.9	40.75	chrom1	47626	48841	TFC_peak_7	op22	start_codon	-268
+chrom1	47358	47359	EX_0047	407	+	16.3	48.9	40.75	chrom1	48860	49610	TFC_peak_7	op22	start_codon	-268
+chrom1	59134	59135	EX_0056	539	+	21.58	64.74	53.95	chrom1	59117	60002	TFC_peak_8	op27	start_codon	17
+plasmid1	6443	6444	EX_0096	252	-	10.1	30.3	25.25	plasmid1	5053	6307	TFC_peak_10	op44	start_codon	-137

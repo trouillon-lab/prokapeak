@@ -22,6 +22,18 @@ python assign_targets.py --gff genome.gff --peaks peaks/*.narrowPeak --operons o
 
 Only `--gff`, `--peaks` and `--out` are required. Each peak file is processed in turn and gives one output file.
 
+## Example
+
+`example/` holds an artificial genome to show the file formats: 100 genes on two chromosomes (`chrom1`,
+`plasmid1`), 45 operons, 28 TSSs and peak files for four made-up TFs. `example/expected/` is the output of
+
+```bash
+cd example
+python ../assign_targets.py --gff genome.gff --operons operons.bed --tss tss.bed --peaks peaks/*.narrowPeak --out out
+```
+
+which should match `expected/` file for file.
+
 ## Input files
 
 All coordinates refer to the same genome; the chromosome name (column 1, or the GFF seqid) must be written
@@ -95,7 +107,8 @@ Example: `NC_000913.3  336  337  TSS0001|b0001,b0002,b0003  0  +`
 ## Assignment
 
 **Units.** With `--operons`, every operon is a unit (operon start), and every gene of an operon other than the
-first starts an internal unit: that gene and the genes downstream of it. Without `--operons`, every gene is a
+first starts an internal unit: that gene and the genes downstream of it. Genes in no operon of the file are never
+assigned, so the file must list single-gene operons too. Without `--operons`, every gene is a
 unit; a TSS hit assigns the genes of its TSS list.
 
 **Windows** (bp, along the unit's strand, negative = upstream; summit position minus anchor position):
