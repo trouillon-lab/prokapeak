@@ -5,10 +5,6 @@ probably regulate. A peak is assigned to a gene when its summit (the single base
 a window around that gene's transcription start site (TSS), or, where no TSS is known, around its start codon.
 Genes transcribed together in one operon are assigned together.
 
-Status: the default mode (operons + TSS map + start-codon fallback) reproduces a reference implementation exactly
-on two test sets. Runs without an operon file or without a TSS map, the options `--no-gene-start`, `--no-internal` and
-`--tss-to-gene`, the `CDS` fallback, plain operon ids and genomes with two chromosomes give the expected results
-on small artificial test data.
 
 ## Requirements
 
