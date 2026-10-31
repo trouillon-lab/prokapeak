@@ -9,8 +9,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from assign_targets import ext, read_genome
-
 CUTOFF, N_NULL, SEED = 0.5, 10000, 0  # pair probability that joins two genes; null sample size and seed (as UniOP)
 Q_RANGE = (0.01, 0.99)  # the prior (fraction of same-strand pairs in operons) is clipped to this range
 MAX_H, MIN_OPPOSITE = 0.2, 20  # bandwidth above which probabilities tend to the prior; opposite-strand pairs for the null
@@ -93,6 +91,7 @@ def predict_operons(g, cutoff=CUTOFF, n_null=N_NULL, seed=SEED):
 
 
 def main(argv=None):
+    from assign_targets import ext, read_genome
     lst = lambda x: x.split(",")
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--gff", required=True, help="GFF3 genome annotation")

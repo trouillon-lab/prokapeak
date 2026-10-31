@@ -20,7 +20,8 @@ Python ≥ 3.8 with numpy and pandas.
 python assign_targets.py --gff genome.gff --peaks peaks/*.narrowPeak --operons operons.tsv --tss tss.bed --out out/
 ```
 
-Only `--gff`, `--peaks` and `--out` are required. Each peak file is processed in turn and gives one output file.
+Only `--gff`, `--peaks` and `--out` are required. `--predict-operons` replaces `--operons` with operons predicted
+from gene spacing (see Predicted operons). Each peak file is processed in turn and gives one output file.
 
 The script can also be imported: `read_genome`, `build_units`, `read_peaks` and `assign` take paths or open files and
 return tables and warning lists; `main()` is the command line.
@@ -145,8 +146,9 @@ operons of two or more genes are written in the operon map format.
 python predict_operons.py --gff genome.gff --out operons.tsv [--pairs pairs.tsv] [--cutoff 0.5]
 ```
 
-`--gff-feature` and `--gff-attribute` work as in `assign_targets.py`. The pair table has one row per pair of
-consecutive genes:
+`--gff-feature` and `--gff-attribute` work as in `assign_targets.py`. In `assign_targets.py`, `--predict-operons`
+replaces `--operons` and writes `predicted_operons.tsv` and `predicted_operon_pairs.tsv` into `--out`;
+`--operon-cutoff` sets the cutoff. The pair table has one row per pair of consecutive genes:
 
 | column | content |
 |---|---|
@@ -167,6 +169,8 @@ separating the pairs and nearly all same-strand neighbours are joined.
 |---|---|
 | `--gff-feature` | GFF feature types to read, comma-separated (default `gene,CDS`); a locus spans all its rows |
 | `--gff-attribute` | GFF attribute holding the gene id (default `locus_tag`) |
+| `--predict-operons` | operons predicted from gene spacing instead of `--operons` |
+| `--operon-cutoff` | pair probability that joins two genes for `--predict-operons` (default 0.5) |
 | `--no-gene-start` | no start-codon windows; units without a TSS are not assigned |
 | `--no-internal` | operon starts only, no internal units |
 | `--tss-window`, `--start-window`, `--internal-window` | window `up,down` in bp |

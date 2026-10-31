@@ -9,6 +9,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from predict_operons import CUTOFF, predict_operons
+
 TSS_WINDOW, START_WINDOW, INTERNAL_WINDOW = (-200, 100), (-400, 25), (-250, 50)  # up, down in bp around the anchor
 CHUNK = 50  # peaks per pass; bounds the size of the summit x anchor matrix
 
@@ -183,6 +185,9 @@ def main(argv=None):
                     "target_chrom, target_start, target_end, peak_id, operon, anchor (TSS/start_codon), distance_to_anchor")
     ap.add_argument("--operons", help="operon map: tab-separated, operon id and its genes (comma-separated), one row per operon")
     ap.add_argument("--tss", help="TSS BED6 (TSS = end); name = locus tag of the gene the TSS starts, '.' = unlinked")
+    ap.add_argument("--predict-operons", action="store_true", help="predict operons from gene spacing instead of --operons; "
+                    "writes predicted_operons.tsv and predicted_operon_pairs.tsv into --out")
+    ap.add_argument("--operon-cutoff", type=float, default=CUTOFF, help="pair probability that joins two genes (--predict-operons)")
     ap.add_argument("--no-gene-start", action="store_true", help="no start-codon windows; units without a TSS are not assigned")
     ap.add_argument("--no-internal", action="store_true", help="no internal units (operon starts only)")
     ap.add_argument("--tss-window", type=win, default="%d,%d" % TSS_WINDOW, help="window around a linked TSS")
@@ -193,7 +198,15 @@ def main(argv=None):
     try:
         ext(a.gff, ".gff", ".gff3")
         g, w = read_genome(a.gff, a.gff_feature, a.gff_attribute)
+        if a.predict_operons and a.operons:
+            raise ValueError("--predict-operons cannot be combined with --operons")
         op = read_table(a.operons, 2, "operon file: operon id, locus tags", num=()) if a.operons and ext(a.operons, ".tsv") else None
+        if a.predict_operons:
+            op, pairs, w3 = predict_operons(g, a.operon_cutoff)
+            Path(a.out).mkdir(parents=True, exist_ok=True)
+            op.to_csv(Path(a.out) / "predicted_operons.tsv", sep="\t", header=False, index=False)
+            pairs.to_csv(Path(a.out) / "predicted_operon_pairs.tsv", sep="\t", index=False, float_format="%.6f")
+            w += w3
         ts = read_table(a.tss, 6, "TSS file: BED6") if a.tss and ext(a.tss, ".bed") else None
         units, w2 = build_units(g, op, ts, a.tss_window, a.start_window, a.internal_window, a.no_internal, a.no_gene_start)
         for m in w + w2:
