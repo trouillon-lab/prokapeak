@@ -22,6 +22,9 @@ python assign_targets.py --gff genome.gff --peaks peaks/*.narrowPeak --operons o
 
 Only `--gff`, `--peaks` and `--out` are required. Each peak file is processed in turn and gives one output file.
 
+The script can also be imported: `read_genome`, `build_units`, `read_peaks` and `assign` take paths or open files and
+return tables and warning lists; `main()` is the command line.
+
 ## Example
 
 `example/` holds an artificial genome to show the file formats: 100 genes on two chromosomes (`chrom1`,
