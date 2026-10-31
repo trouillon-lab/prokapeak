@@ -16,6 +16,8 @@ CHUNK = 50  # peaks per pass; bounds the size of the summit x anchor matrix
 
 
 def ext(path, *ok):
+    if not Path(path).is_file():
+        raise ValueError(f"{path}: file not found")
     if Path(path).suffix not in ok:
         raise ValueError(f"{path}: file name must end in {' or '.join(ok)} (plain text, not gzipped)")
     return Path(path).suffix
@@ -222,7 +224,7 @@ def main(argv=None):
             bed, n, w3 = assign(units, g, pk, summits)
             for m in w3:
                 warn(f"{tf}: {m}")
-            bed.to_csv(Path(a.out) / f"{tf}_assigned_peaks.bed", sep="\t", header=False, index=False)
+            bed.rename(columns={"chrom": "#chrom"}).to_csv(Path(a.out) / f"{tf}_assigned_peaks.bed", sep="\t", index=False)
             print(f"{tf}: {n}/{len(pk)} peaks assigned, {bed.target.nunique()} target genes")
     except ValueError as e:
         raise SystemExit(e)

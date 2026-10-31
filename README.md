@@ -185,8 +185,8 @@ separating the pairs and nearly all same-strand neighbours are joined.
 
 ## Output
 
-One `<TF>_assigned_peaks.bed` per peak file in `--out`: tab-separated, no header, one row per peak and assigned
-gene, sorted by position. A peak assigned to an operon of four genes gives four rows.
+One `<TF>_assigned_peaks.bed` per peak file in `--out`: tab-separated, a `#` header line naming the columns, then
+one row per peak and assigned gene, sorted by position. A peak assigned to an operon of four genes gives four rows.
 
 | column | content |
 |---|---|

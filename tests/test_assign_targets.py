@@ -26,13 +26,14 @@ def test_predict_operons_files(tmp_path):
 
 
 @pytest.mark.parametrize("args, msg", [
-    (["--operons", "x.bed"], "must end in .tsv"),
+    (["--operons", "wide.bed"], "must end in .tsv"),
+    (["--operons", "missing.tsv"], "file not found"),
     (["--operons", str(E / "operons.tsv"), "--predict-operons"], "cannot be combined"),
     (["--peaks", "wide.bed"], "not 1-bp summit"),
 ])
 def test_input_errors(tmp_path, args, msg):
     (tmp_path / "wide.bed").write_text("chrom1\t100\t200\n")
-    args = [str(tmp_path / a) if a.endswith("wide.bed") else a for a in args]
+    args = [str(tmp_path / a) if a.endswith(".bed") or a == "missing.tsv" else a for a in args]
     if "--peaks" not in args:
         args += ["--peaks", PEAKS[0]]
     with pytest.raises(SystemExit, match=msg):
