@@ -7,8 +7,7 @@ Genes transcribed together in one operon are assigned together.
 
 Status: the default mode (operons + TSS map + start-codon fallback), runs
 without an operon file or without a TSS map, the options `--no-gene-start`, `--no-internal` and `--tss-to-gene`,
-plain operon ids and genomes with two chromosomes give the expected results
-on small artificial test data.
+and genomes with two chromosomes give the expected results on small artificial test data.
 
 ## Requirements
 
@@ -17,7 +16,7 @@ Python ≥ 3.8 with numpy and pandas.
 ## Usage
 
 ```bash
-python assign_targets.py --gff genome.gff --peaks peaks/*.narrowPeak --operons operons.bed --tss tss.bed --out out/
+python assign_targets.py --gff genome.gff --peaks peaks/*.narrowPeak --operons operons.tsv --tss tss.bed --out out/
 ```
 
 Only `--gff`, `--peaks` and `--out` are required. Each peak file is processed in turn and gives one output file.
@@ -32,7 +31,7 @@ return tables and warning lists; `main()` is the command line.
 
 ```bash
 cd example
-python ../assign_targets.py --gff genome.gff --operons operons.bed --tss tss.bed --peaks peaks/*.narrowPeak --out out
+python ../assign_targets.py --gff genome.gff --operons operons.tsv --tss tss.bed --peaks peaks/*.narrowPeak --out out
 ```
 
 which should match `expected/` file for file.
@@ -41,10 +40,11 @@ which should match `expected/` file for file.
 
 All coordinates refer to the same genome; the chromosome name (column 1, or the GFF seqid) must be written
 identically in every file. Genomes with several chromosomes or plasmids are supported. Files are plain text, named
-by format: `.gff` or `.gff3`, `.bed`, `.narrowPeak`; a file of the wrong shape (columns, header lines, non-integer
+by format: `.gff` or `.gff3`, `.tsv`, `.bed`, `.narrowPeak`; a file of the wrong shape (columns, header lines, non-integer
 coordinates, missing summits) stops the run with a message naming it.
-Rows that cannot be matched to the annotation (loci with rows on several chromosomes or strands, peaks on unknown chromosomes, operons holding no gene or not
-ending on a gene boundary, linked TSSs whose gene is not found, genes in no operon) are counted in warnings on stderr.
+Rows that cannot be matched to the annotation (loci with rows on several chromosomes or strands, peaks on unknown
+chromosomes, operon genes not in the GFF, operons with genes on several chromosomes or strands, linked
+TSSs whose gene is not found) are counted in warnings on stderr.
 
 ### `--gff` genome annotation (required)
 
@@ -84,18 +84,16 @@ be distinct. An empty peak file gives an empty output file.
 
 ### `--operons` operon map (optional)
 
-BED6, tab-separated, no header, one row per operon.
+Tab-separated, no header, two columns: operon id, locus tags of its genes separated by commas. One row per operon;
+rows with the same operon id are merged, so one gene per row works too. The order of the genes in the list does
+not matter: the genes of an operon are ordered 5'→3' from their GFF coordinates. Genes not listed are single-gene
+units. Listed genes that are not in the GFF, and operons whose genes lie on several chromosomes or strands, are
+skipped with a warning.
 
-| column | content |
-|---|---|
-| 1 chrom | chromosome |
-| 2 start | 0-based start of the operon's leftmost gene (GFF start − 1) |
-| 3 end | end of the operon's rightmost gene (= GFF end) |
-| 4 name | operon id, or an Operon-mapper string `[type:operon\|operon:<id>\|...]` (id = the `operon:` field); rows containing `type:gene` are skipped |
-| 5 score | ignored |
-| 6 strand | `+` or `-` |
-
-The operon's genes are the GFF genes on the same chromosome and strand that lie entirely between start and end.
+```
+op1	b0002,b0003,b0004
+op2	b0005
+```
 
 ### `--tss` TSS map (optional)
 
@@ -118,9 +116,8 @@ Example: `NC_000913.3  336  337  TSS0001|b0001,b0002,b0003  0  +`
 ## Assignment
 
 **Units.** With `--operons`, every operon is a unit (operon start), and every gene of an operon other than the
-first starts an internal unit: that gene and the genes downstream of it. Genes in no operon of the file are never
-assigned, so the file must list single-gene operons too. Without `--operons`, every gene is a
-unit; a TSS hit assigns the genes of its TSS list.
+first starts an internal unit: that gene and the genes downstream of it. Genes in no operon are single-gene
+units. Without `--operons`, every gene is a unit; a TSS hit assigns the genes of its TSS list.
 
 **Windows** (bp, along the unit's strand, negative = upstream; summit position minus anchor position):
 
@@ -165,7 +162,7 @@ gene, sorted by position. A peak assigned to an operon of four genes gives four 
 | 10 target_chrom | chromosome of the target gene |
 | 11 target_start, 12 target_end | target gene coordinates (0-based start) |
 | 13 peak_id | narrowPeak column 4 |
-| 14 operon | operon id; without `--operons`, the TSS's linked gene when its list holds several genes, else `.` |
+| 14 operon | operon id, `.` for a gene in no operon; without `--operons`, the TSS's linked gene when its list holds several genes, else `.` |
 | 15 anchor | `TSS` or `start_codon` |
 | 16 distance_to_anchor | summit minus anchor, along the target's strand (negative = upstream) |
 

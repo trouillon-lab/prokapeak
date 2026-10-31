@@ -19,8 +19,8 @@ def ext(path, *ok):
     return Path(path).suffix
 
 
-def read_bed(path, n, what):
-    """Tab-separated, no header, at least n columns, integer coordinates in columns 2, 3 (and 10 for narrowPeak)."""
+def read_table(path, n, what, num=(1, 2, 9)):
+    """Tab-separated, no header, at least n columns; columns num (0-based, those < n) must be integers."""
     try:
         t = pd.read_csv(path, sep="\t", header=None, comment="#", dtype=str)
     except pd.errors.EmptyDataError:
@@ -29,7 +29,7 @@ def read_bed(path, n, what):
         raise ValueError(f"{path}: {what}, tab-separated without header lines")
     if t.shape[1] < n:
         raise ValueError(f"{path}: {what}; found {t.shape[1]} columns")
-    num = t[[c for c in (1, 2, 9) if c < n]].apply(pd.to_numeric, errors="coerce")
+    num = t[[c for c in num if c < n]].apply(pd.to_numeric, errors="coerce")
     if num.isna().any().any():
         raise ValueError(f"{path}: {what}; non-integer coordinates (header line?)")
     t[num.columns] = num.astype(int)
@@ -64,32 +64,29 @@ def read_genome(gff, features=("gene", "CDS"), attribute="locus_tag"):
 def build_units(g, operons=None, tss=None, tss_window=TSS_WINDOW, start_window=START_WINDOW,
                 internal_window=INTERNAL_WINDOW, no_internal=False, no_gene_start=False, tss_to_gene=False):
     """Units to assign (operon starts, internal starts or single genes) with anchor and window, list of warnings.
-    operons, tss: BED6 tables from read_bed, or None."""
+    operons: table with operon id and comma-separated locus tags per row; tss: BED6 table; from read_table, or None."""
     w = []
     sc = dict(zip(g.locus, np.where(g.strand == "+", g.start, g.end)))
     strand, chrom = dict(zip(g.locus, g.strand)), dict(zip(g.locus, g.chrom))
     base = []  # units: genes ordered 5'->3', the first gene's start codon is the unit start
     if operons is not None:
-        op = operons.iloc[:, :6].set_axis(["chrom", "start", "end", "name", "score", "strand"], axis=1)
-        gc, gs, ge, gst, gl = (g[k].to_numpy() for k in ("chrom", "start", "end", "strand", "locus"))
-        op = op[~op.name.str.contains("type:gene", regex=False)]
-        empty = off = 0
-        for r in op.itertuples():
-            oid = m.group(1) if (m := re.search(r"operon:([^|\]]+)", r.name)) else r.name
-            i = np.flatnonzero((gc == r.chrom) & (gst == r.strand) & (gs > r.start) & (ge <= r.end))  # BED start 0-based
-            empty += len(i) == 0
-            off += len(i) > 0 and not ((gs[i] - 1 == r.start).any() and (ge[i] == r.end).any())
-            genes = gl[i[np.argsort(gs[i] * (1 if r.strand == "+" else -1), kind="stable")]].tolist()
-            for i in range(min(len(genes), 1 if no_internal else len(genes))):
+        op = operons.iloc[:, :2].set_axis(["operon", "locus"], axis=1)
+        op = op.assign(locus=op.locus.str.strip().str.split(r"\s*,\s*", regex=True)).explode("locus")  # one row per gene
+        if unknown := (~op.locus.isin(g.locus)).sum():
+            w.append(f"operons: {unknown}/{len(op)} listed genes are not in the annotation")
+        order = dict(zip(g.locus, np.where(g.strand == "+", g.start, -g.start)))  # 5'->3' along the strand
+        split = 0
+        for oid, genes in op[op.locus.isin(g.locus)].groupby("operon", sort=False).locus:
+            genes = sorted(genes, key=order.get)
+            if len({(chrom[x], strand[x]) for x in genes}) > 1:
+                split += 1
+                continue
+            for i in range(1 if no_internal else len(genes)):
                 base.append(dict(operon=oid, internal=bool(i), genes=genes[i:]))
-        if empty:
-            w.append(f"operons: {empty}/{len(op)} rows hold no gene on their strand (chromosome names? 0-based start?)")
-        if off:
-            w.append(f"operons: {off}/{len(op)} rows do not start or end on a gene boundary; edge genes may be lost")
-        if lone := (~g.locus.isin({x for u in base for x in u["genes"]})).sum():
-            w.append(f"operons: {lone}/{len(g)} genes are in no operon and are never assigned")
-    else:
-        base = [dict(operon=".", internal=False, genes=[x]) for x in g.locus]
+        if split:
+            w.append(f"operons: {split} operons with genes on several chromosomes or strands ignored")
+    listed = {x for u in base for x in u["genes"]}
+    base += [dict(operon=".", internal=False, genes=[x]) for x in g.locus if x not in listed]  # single-gene units
 
     links = {}  # linked gene -> [(position, gene list on the TSS's strand and chromosome)]
     if tss is not None:
@@ -132,11 +129,11 @@ def resolve(h):
 def read_peaks(path, fmt):
     """narrowPeak (.narrowPeak) or 1-bp summit BED (.bed) -> 10-column table, 1-based summit positions."""
     if fmt == ".narrowPeak":
-        pk = read_bed(path, 10, "narrowPeak: 10 columns, summit offset in column 10")
+        pk = read_table(path, 10, "narrowPeak: 10 columns, summit offset in column 10")
         if (pk[9] < 0).any():
             raise ValueError(f"{path}: {(pk[9] < 0).sum()} rows without summit (column 10 = -1)")
         return pk, (pk[1] + pk[9] + 1).to_numpy(int)
-    pk = read_bed(path, 3, "summit BED: 1-bp intervals at the summits")
+    pk = read_table(path, 3, "summit BED: 1-bp intervals at the summits")
     if (pk[2] - pk[1] != 1).any():
         raise ValueError(f"{path}: {(pk[2] - pk[1] != 1).sum()} rows are not 1-bp summit intervals")
     return pk.reindex(columns=range(10), fill_value="."), pk[2].to_numpy(int)
@@ -191,7 +188,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="output folder; one <TF>_assigned_peaks.bed per peak file, one row per peak "
                     "x target gene: chrom, summit start, summit end, target, peak_score, target strand, signal, pscore, qscore, "
                     "target_chrom, target_start, target_end, peak_id, operon, anchor (TSS/start_codon), distance_to_anchor")
-    ap.add_argument("--operons", help="operon BED6; name = operon id or Operon-mapper string")
+    ap.add_argument("--operons", help="operon map: tab-separated, operon id and its genes (comma-separated), one row per operon")
     ap.add_argument("--tss", help="TSS BED6 (TSS = end); name = <tss_id>|<locus_tags 5'->3'>, '.' = unlinked")
     ap.add_argument("--no-gene-start", action="store_true", help="no start-codon windows; units without a TSS are not assigned")
     ap.add_argument("--no-internal", action="store_true", help="no internal units (operon starts only)")
@@ -204,8 +201,8 @@ def main(argv=None):
     try:
         ext(a.gff, ".gff", ".gff3")
         g, w = read_genome(a.gff, a.gff_feature, a.gff_attribute)
-        op = read_bed(a.operons, 6, "operon file: BED6") if a.operons and ext(a.operons, ".bed") else None
-        ts = read_bed(a.tss, 6, "TSS file: BED6") if a.tss and ext(a.tss, ".bed") else None
+        op = read_table(a.operons, 2, "operon file: operon id, locus tags", num=()) if a.operons and ext(a.operons, ".tsv") else None
+        ts = read_table(a.tss, 6, "TSS file: BED6") if a.tss and ext(a.tss, ".bed") else None
         units, w2 = build_units(g, op, ts, a.tss_window, a.start_window, a.internal_window, a.no_internal,
                                 a.no_gene_start, a.tss_to_gene)
         for m in w + w2:
