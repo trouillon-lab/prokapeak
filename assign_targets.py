@@ -170,8 +170,8 @@ for path, tf, fmt in zip(a.peaks, tfs, fmts):  # one output file per peak file
         warn(f"{tf}: {(c_all < 0).sum()}/{len(pk)} peaks on chromosomes not in the annotation: "
              f"{sorted(set(pk[0][c_all < 0]))[:3]}")
     out = []
-    for c0 in range(0, max(len(pk), 1), 2000):  # chunks bound the size of the site x anchor matrix
-        s, c = s_all[c0:c0 + 2000], c_all[c0:c0 + 2000]
+    for c0 in range(0, max(len(pk), 1), 50):  # chunks bound the size of the site x anchor matrix
+        s, c = s_all[c0:c0 + 50], c_all[c0:c0 + 50]
         D = (s[:, None] - pos) * sgn
         pi, ui = np.nonzero((D >= up) & (D <= down) & (c[:, None] == u_chrom))
         h = resolve(pd.DataFrame({"p": pi, "u": ui, "d": np.abs(D[pi, ui]), "s": sgn[ui], "uid": uid[ui]}))
