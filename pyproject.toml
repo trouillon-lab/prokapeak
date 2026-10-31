@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "target-predictor"
+version = "0.1.0"
+description = "Assign MACS3 peaks to target genes through TSS and gene-start windows"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "Alexandre Dentler" }, { name = "Julian Trouillon" }]
+keywords = ["ChIP-seq", "DAP-seq", "MACS3", "transcription factor", "operon", "bacteria"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+dependencies = ["numpy", "pandas"]
+
+[project.urls]
+Repository = "https://github.com/trouillon-lab/target-predictor"
+
+[project.scripts]
+assign-targets = "assign_targets:main"
+
+[tool.setuptools]
+py-modules = ["assign_targets"]
