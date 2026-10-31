@@ -5,9 +5,9 @@ probably regulate. A peak is assigned to a gene when its summit (the single base
 a window around that gene's transcription start site (TSS), or, where no TSS is known, around its start codon.
 Genes transcribed together in one operon are assigned together.
 
-Status: the default mode (operons + TSS map + start-codon fallback) reproduces a reference implementation exactly
-on two test sets. Runs without an operon file or without a TSS map, the options `--no-gene-start`, `--no-internal` and
-`--tss-to-gene`, the `CDS` fallback, plain operon ids and genomes with two chromosomes give the expected results
+Status: the default mode (operons + TSS map + start-codon fallback), runs
+without an operon file or without a TSS map, the options `--no-gene-start`, `--no-internal` and `--tss-to-gene`,
+the `CDS` fallback, plain operon ids and genomes with two chromosomes give the expected results
 on small artificial test data.
 
 ## Requirements
@@ -123,11 +123,10 @@ unit; a TSS hit assigns the genes of its TSS list.
 
 Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is not read as an option.
 
-**Rules.**
-1. A peak is tested against internal units only if it lies outside every operon-start window.
-2. A unit with several TSSs is assigned once, through the TSS nearest the summit.
-3. A peak in the windows of units on opposite strands (between two divergent genes) is assigned to both; of
-   several units on the same strand, only to the nearest.
+**Overlapping windows** (function `resolve` in the script).
+1. A unit with several TSSs is assigned once, through the TSS nearest the summit.
+2. Of several units on one strand, only the one with the nearest anchor is assigned.
+3. A summit in windows on both strands (between divergent genes) is assigned on both.
 4. An assigned unit assigns all its genes.
 
 ## Options

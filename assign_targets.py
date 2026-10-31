@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Assign MACS3 peaks to target genes through TSS and gene-start windows.
-Default mode checked against a reference run; the other modes checked on a small artificial genome."""
+Checked on small artificial test data (example/)."""
 import argparse
 import re
 import sys
@@ -102,8 +102,14 @@ pos, up, down = units.anchor_pos.to_numpy(), units.up.to_numpy(), units.down.to_
 sgn = np.where(units.strand == "+", 1, -1)
 chrom_id = {c: i for i, c in enumerate(units.chrom.unique())}
 u_chrom = units.chrom.map(chrom_id).to_numpy()
-start = ~units.internal.to_numpy(bool)
-strand_cols = [c for c in (np.flatnonzero(sgn == 1), np.flatnonzero(sgn == -1)) if len(c)]
+uid = pd.factorize(units.genes.str[0])[0]  # a unit is identified by its first gene
+
+
+def resolve(h):
+    """Overlapping windows. h: one row per summit p x unit row u whose window holds it (|distance| d, strand s)."""
+    h = h.sort_values("d", kind="stable").drop_duplicates(["p", "uid"])  # 1. one anchor per unit: the nearest TSS
+    h = h.drop_duplicates(["p", "s"])                       # 2. one unit per strand: the nearest anchor; both strands
+    return h.sort_values(["p", "u"])
 
 tfs = [Path(p).stem for p in a.peaks]
 if len(set(tfs)) < len(tfs):
@@ -123,15 +129,9 @@ for path, tf in zip(a.peaks, tfs):  # one output file per peak file
     for c0 in range(0, max(len(pk), 1), 2000):  # chunks bound the size of the site x anchor matrix
         s, c = s_all[c0:c0 + 2000], c_all[c0:c0 + 2000]
         D = (s[:, None] - pos) * sgn
-        hit = (D >= up) & (D <= down) & (c[:, None] == u_chrom)
-        hit[np.ix_(hit[:, start].any(1), ~start)] = False      # operon starts first
-        A = np.where(hit, np.abs(D), np.inf)
-        hit[:] = False
-        for cols in strand_cols:                                # per strand only the nearest anchor, which also
-            j = cols[A[:, cols].argmin(1)]                      # keeps one anchor per unit
-            ok = np.isfinite(A[np.arange(len(s)), j])
-            hit[ok, j[ok]] = True
-        pi, ui = np.nonzero(hit)
+        pi, ui = np.nonzero((D >= up) & (D <= down) & (c[:, None] == u_chrom))
+        h = resolve(pd.DataFrame({"p": pi, "u": ui, "d": np.abs(D[pi, ui]), "s": sgn[ui], "uid": uid[ui]}))
+        pi, ui = h.p.to_numpy(), h.u.to_numpy()
         u = units.iloc[ui]
         out.append(pd.DataFrame({"i": c0 + pi, "gene": u.genes.to_numpy(), "anchor": u.anchor.to_numpy(),
                                  "distance_to_anchor": D[pi, ui], "operon": u.operon.to_numpy()}))
