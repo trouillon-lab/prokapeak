@@ -31,6 +31,32 @@ ap.add_argument("--internal-window", type=win, default="-250,50", help="internal
 a = ap.parse_args()
 warn = lambda m: print("warning:", m, file=sys.stderr)
 
+
+def ext(path, *ok):
+    if Path(path).suffix not in ok:
+        raise SystemExit(f"{path}: file name must end in {' or '.join(ok)} (plain text, not gzipped)")
+    return Path(path).suffix
+
+
+def read_bed(path, n, what):
+    """Tab-separated, no header, at least n columns, integer coordinates in columns 2, 3 (and 10 for narrowPeak)."""
+    try:
+        t = pd.read_csv(path, sep="\t", header=None, comment="#", dtype=str)
+    except pd.errors.EmptyDataError:
+        t = pd.DataFrame(columns=range(n), dtype=str)
+    except pd.errors.ParserError:
+        raise SystemExit(f"{path}: {what}, tab-separated without header lines")
+    if t.shape[1] < n:
+        raise SystemExit(f"{path}: {what}; found {t.shape[1]} columns")
+    num = t[[c for c in (1, 2, 9) if c < n]].apply(pd.to_numeric, errors="coerce")
+    if num.isna().any().any():
+        raise SystemExit(f"{path}: {what}; non-integer coordinates (header line?)")
+    t[num.columns] = num.astype(int)
+    return t
+
+
+ext(a.gff, ".gff", ".gff3")
+
 rows, types, attrs = [], set(), set()
 for line in open(a.gff):
     f = line.rstrip("\r\n").split("\t")
@@ -42,6 +68,10 @@ for line in open(a.gff):
         if m := re.search(rf"(?:^|;){re.escape(a.gff_attribute)}=([^;]+)", f[8]):
             rows.append((m.group(1), f[0], int(f[3]), int(f[4]), f[6]))
 g = pd.DataFrame(rows, columns=["locus", "chrom", "start", "end", "strand"])
+split = g.groupby("locus")[["chrom", "strand"]].nunique().max(axis=1) > 1
+if split.any():
+    warn(f"gff: {split.sum()} loci with rows on several chromosomes or strands dropped: {list(split.index[split][:3])}")
+    g = g[~g.locus.isin(split.index[split])]
 g = g.groupby("locus", sort=False).agg({"chrom": "first", "start": "min", "end": "max", "strand": "first"}).reset_index()
 if g.empty:
     raise SystemExit(f"gff: no {'/'.join(a.gff_feature)} feature with a {a.gff_attribute} attribute. Feature types in the "
@@ -53,8 +83,8 @@ g_start, g_end = dict(zip(g.locus, g.start - 1)), dict(zip(g.locus, g.end))  # B
 
 base = []  # units: genes ordered 5'->3', the first gene's start codon is the unit start
 if a.operons:
-    op = pd.read_csv(a.operons, sep="\t", header=None, usecols=range(6), dtype={0: str, 3: str},
-                     names=["chrom", "start", "end", "name", "score", "strand"])
+    ext(a.operons, ".bed")
+    op = read_bed(a.operons, 6, "operon file: BED6").iloc[:, :6].set_axis(["chrom", "start", "end", "name", "score", "strand"], axis=1)
     gc, gs, ge, gst, gl = (g[k].to_numpy() for k in ("chrom", "start", "end", "strand", "locus"))
     op = op[~op.name.str.contains("type:gene", regex=False)]
     empty = off = 0
@@ -77,8 +107,8 @@ else:
 
 tss = {}  # linked gene -> [(position, gene list on the TSS's strand and chromosome)]
 if a.tss:
-    t = pd.read_csv(a.tss, sep="\t", header=None, usecols=range(6), dtype={0: str, 3: str},
-                    names=["chrom", "start", "end", "name", "score", "strand"])
+    ext(a.tss, ".bed")
+    t = read_bed(a.tss, 6, "TSS file: BED6").iloc[:, :6].set_axis(["chrom", "start", "end", "name", "score", "strand"], axis=1)
     lost = 0
     for r in t.itertuples():
         lst = [x.strip() for x in r.name.partition("|")[2].split(",")]
@@ -119,17 +149,23 @@ def resolve(h):
     h = h.drop_duplicates(["p", "s"])                       # 2. one unit per strand: the nearest anchor; both strands
     return h.sort_values(["p", "u"])
 
-tfs = [Path(p).stem for p in a.peaks]
+tfs, fmts = [Path(p).stem for p in a.peaks], [ext(p, ".narrowPeak", ".bed") for p in a.peaks]
 if len(set(tfs)) < len(tfs):
     raise SystemExit("peak file names must be distinct: they name the TFs and the output files")
 Path(a.out).mkdir(parents=True, exist_ok=True)
 
-for path, tf in zip(a.peaks, tfs):  # one output file per peak file
-    try:
-        pk = pd.read_csv(path, sep="\t", header=None, comment="#", usecols=range(10), dtype={0: str})
-    except pd.errors.EmptyDataError:
-        pk = pd.DataFrame({i: [] for i in range(10)}, dtype=int)
-    s_all, c_all = (pk[1] + pk[9] + 1).to_numpy(int), pk[0].map(chrom_id).fillna(-1).to_numpy(int)
+for path, tf, fmt in zip(a.peaks, tfs, fmts):  # one output file per peak file
+    if fmt == ".narrowPeak":
+        pk = read_bed(path, 10, "narrowPeak: 10 columns, summit offset in column 10")
+        if (pk[9] < 0).any():
+            raise SystemExit(f"{path}: {(pk[9] < 0).sum()} rows without summit (column 10 = -1)")
+        s_all = (pk[1] + pk[9] + 1).to_numpy(int)
+    else:
+        pk = read_bed(path, 3, "summit BED: 1-bp intervals at the summits")
+        if (pk[2] - pk[1] != 1).any():
+            raise SystemExit(f"{path}: {(pk[2] - pk[1] != 1).sum()} rows are not 1-bp summit intervals")
+        pk, s_all = pk.reindex(columns=range(10), fill_value="."), pk[2].to_numpy(int)
+    c_all = pk[0].map(chrom_id).fillna(-1).to_numpy(int)
     if (c_all < 0).any():
         warn(f"{tf}: {(c_all < 0).sum()}/{len(pk)} peaks on chromosomes not in the annotation: "
              f"{sorted(set(pk[0][c_all < 0]))[:3]}")

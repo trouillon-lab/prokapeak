@@ -37,8 +37,10 @@ which should match `expected/` file for file.
 ## Input files
 
 All coordinates refer to the same genome; the chromosome name (column 1, or the GFF seqid) must be written
-identically in every file. Genomes with several chromosomes or plasmids are supported.
-Rows that cannot be matched to the annotation (peaks on unknown chromosomes, operons holding no gene or not
+identically in every file. Genomes with several chromosomes or plasmids are supported. Files are plain text, named
+by format: `.gff` or `.gff3`, `.bed`, `.narrowPeak`; a file of the wrong shape (columns, header lines, non-integer
+coordinates, missing summits) stops the run with a message naming it.
+Rows that cannot be matched to the annotation (loci with rows on several chromosomes or strands, peaks on unknown chromosomes, operons holding no gene or not
 ending on a gene boundary, linked TSSs whose gene is not found, genes in no operon) are counted in warnings on stderr.
 
 ### `--gff` genome annotation (required)
@@ -57,7 +59,9 @@ of one type or of several, spans all of them. Every row needs the attribute hold
 
 ### `--peaks` peak files (required, one or more)
 
-MACS3 narrowPeak: 10 tab-separated columns, no header, one file per TF.
+One file per TF, either MACS3 narrowPeak (`.narrowPeak`, 10 tab-separated columns, no header) or a BED file of
+summits (`.bed`, every row a 1-bp interval at the summit, as in MACS3 `NAME_summits.bed`; columns 4 and 5 are
+copied to the output, signal, pscore and qscore are written as `.`).
 
 | column | content |
 |---|---|
@@ -71,7 +75,8 @@ MACS3 narrowPeak: 10 tab-separated columns, no header, one file per TF.
 | 8 pValue, 9 qValue | −log10, copied to the output |
 | 10 peak | summit offset from column 2 |
 
-The summit is column 2 + column 10 (0-based). The TF name is the file name without extension, so file names must
+The summit is column 2 + column 10 (0-based), or column 3 of a summit BED. The TF name is the file name without
+extension, so file names must
 be distinct. An empty peak file gives an empty output file.
 
 ### `--operons` operon map (optional)
