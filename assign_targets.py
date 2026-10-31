@@ -3,6 +3,7 @@
 Default mode checked against a reference run; the other modes checked on a small artificial genome."""
 import argparse
 import re
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +26,7 @@ ap.add_argument("--tss-window", type=win, default="-200,100", help="window aroun
 ap.add_argument("--start-window", type=win, default="-400,25", help="operon-start window around the start codon")
 ap.add_argument("--internal-window", type=win, default="-250,50", help="internal window around the start codon")
 a = ap.parse_args()
+warn = lambda m: print("warning:", m, file=sys.stderr)
 
 rows = []
 for line in open(a.gff):
@@ -35,6 +37,8 @@ for line in open(a.gff):
         rows.append((f[2], m.group(1), f[0], int(f[3]), int(f[4]), f[6]))
 g = pd.DataFrame(rows, columns=["type", "locus", "chrom", "start", "end", "strand"])
 g = g[(g.type == "gene") | ~g.locus.isin(g.locus[g.type == "gene"])].drop_duplicates("locus")
+if g.empty:
+    raise SystemExit("gff: no gene or CDS feature with a locus_tag attribute")
 sc = dict(zip(g.locus, np.where(g.strand == "+", g.start, g.end)))
 strand, chrom = dict(zip(g.locus, g.strand)), dict(zip(g.locus, g.chrom))
 g_start, g_end = dict(zip(g.locus, g.start - 1)), dict(zip(g.locus, g.end))  # BED, 0-based start
@@ -44,12 +48,22 @@ if a.operons:
     op = pd.read_csv(a.operons, sep="\t", header=None, usecols=range(6), dtype={0: str, 3: str},
                      names=["chrom", "start", "end", "name", "score", "strand"])
     gc, gs, ge, gst, gl = (g[k].to_numpy() for k in ("chrom", "start", "end", "strand", "locus"))
-    for r in op[~op.name.str.contains("type:gene", regex=False)].itertuples():
+    op = op[~op.name.str.contains("type:gene", regex=False)]
+    empty = off = 0
+    for r in op.itertuples():
         oid = m.group(1) if (m := re.search(r"operon:([^|\]]+)", r.name)) else r.name
         i = np.flatnonzero((gc == r.chrom) & (gst == r.strand) & (gs > r.start) & (ge <= r.end))  # BED start 0-based
+        empty += len(i) == 0
+        off += len(i) > 0 and not ((gs[i] - 1 == r.start).any() and (ge[i] == r.end).any())
         genes = gl[i[np.argsort(gs[i] * (1 if r.strand == "+" else -1), kind="stable")]].tolist()
         for i in range(min(len(genes), 1 if a.no_internal else len(genes))):
             base.append(dict(operon=oid, internal=bool(i), genes=genes[i:]))
+    if empty:
+        warn(f"operons: {empty}/{len(op)} rows hold no gene on their strand (chromosome names? 0-based start?)")
+    if off:
+        warn(f"operons: {off}/{len(op)} rows do not start or end on a gene boundary; edge genes may be lost")
+    if lone := (~g.locus.isin({x for u in base for x in u["genes"]})).sum():
+        warn(f"operons: {lone}/{len(g)} genes are in no operon and are never assigned")
 else:
     base = [dict(operon=".", internal=False, genes=[x]) for x in g.locus]
 
@@ -57,12 +71,18 @@ tss = {}  # linked gene -> [(position, gene list on the TSS's strand and chromos
 if a.tss:
     t = pd.read_csv(a.tss, sep="\t", header=None, usecols=range(6), dtype={0: str, 3: str},
                     names=["chrom", "start", "end", "name", "score", "strand"])
+    lost = 0
     for r in t.itertuples():
-        lst = r.name.partition("|")[2]
-        lst = [x.strip() for x in lst.split(",")]
+        lst = [x.strip() for x in r.name.partition("|")[2].split(",")]
         same = [x for x in lst if strand.get(x) == r.strand and chrom.get(x) == r.chrom]
         if same and same[0] == lst[0]:
             tss.setdefault(lst[0], []).append((r.end, same))
+        elif lst[0] not in ("", "."):
+            lost += 1
+    if lost:
+        warn(f"tss: {lost}/{len(t)} linked rows skipped: gene unknown or on another strand or chromosome")
+    if not tss:
+        warn("tss: no usable TSS (name must be <tss_id>|<locus_tag>), all units use start-codon windows")
 
 rows = []
 for u in base:
@@ -96,6 +116,9 @@ for path, tf in zip(a.peaks, tfs):  # one output file per peak file
     except pd.errors.EmptyDataError:
         pk = pd.DataFrame({i: [] for i in range(10)}, dtype=int)
     s_all, c_all = (pk[1] + pk[9] + 1).to_numpy(int), pk[0].map(chrom_id).fillna(-1).to_numpy(int)
+    if (c_all < 0).any():
+        warn(f"{tf}: {(c_all < 0).sum()}/{len(pk)} peaks on chromosomes not in the annotation: "
+             f"{sorted(set(pk[0][c_all < 0]))[:3]}")
     out = []
     for c0 in range(0, max(len(pk), 1), 2000):  # chunks bound the size of the site x anchor matrix
         s, c = s_all[c0:c0 + 2000], c_all[c0:c0 + 2000]

@@ -38,6 +38,8 @@ which should match `expected/` file for file.
 
 All coordinates refer to the same genome; the chromosome name (column 1, or the GFF seqid) must be written
 identically in every file. Genomes with several chromosomes or plasmids are supported.
+Rows that cannot be matched to the annotation (peaks on unknown chromosomes, operons holding no gene or not
+ending on a gene boundary, linked TSSs whose gene is not found, genes in no operon) are counted in warnings on stderr.
 
 ### `--gff` genome annotation (required)
 
