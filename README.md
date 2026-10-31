@@ -3,7 +3,8 @@
 Assigns transcription factor (TF) binding peaks from ChIP-seq or DAP-seq, called with MACS3, to the genes they
 probably regulate. A peak is assigned to a gene when its summit (the single base with the highest signal) lies in
 a window around that gene's transcription start site (TSS), or, where no TSS is known, around its start codon.
-Genes transcribed together in one operon are assigned together.
+Genes transcribed together in one operon are assigned together. Without an operon map, `predict_operons.py`
+predicts operons from gene spacing.
 
 Status: the default mode (operons + TSS map + start-codon fallback), runs
 without an operon file or without a TSS map, the options `--no-gene-start` and `--no-internal`, and genomes with
@@ -133,6 +134,32 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 2. Of several units on one strand, only the one with the nearest anchor is assigned.
 3. A summit in windows on both strands (between divergent genes) is assigned on both.
 4. An assigned unit assigns all its genes.
+
+## Predicted operons
+
+Without an operon map, `predict_operons.py` can predict operons from gene spacing using the method from UniOP (Su,
+Zhang and Söding, bioRxiv 2024, doi:10.1101/2024.11.11.623000). Pairs at or above the cutoff (default 0.5) are joined;
+operons of two or more genes are written in the operon map format.
+
+```bash
+python predict_operons.py --gff genome.gff --out operons.tsv [--pairs pairs.tsv] [--cutoff 0.5]
+```
+
+`--gff-feature` and `--gff-attribute` work as in `assign_targets.py`. The pair table has one row per pair of
+consecutive genes:
+
+| column | content |
+|---|---|
+| chrom | chromosome |
+| a, b | locus tags, in genome order |
+| gap | start of b − end of a + 1 |
+| class | `same`, `convergent` or `divergent` |
+| prob | probability that a and b are in one operon; empty for opposite-strand pairs |
+
+The probabilities equal those of the UniOP script (`tests/`), except that pairs are formed within a chromosome
+only, the prior is clipped to 0.01–0.99, and a genome without convergent or without divergent pairs uses the
+other class alone. The method needs a genome-sized gene set: below about 1,000 same-strand pairs the gaps stop
+separating the pairs and nearly all same-strand neighbours are joined.
 
 ## Options
 
