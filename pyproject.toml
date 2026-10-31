@@ -21,6 +21,9 @@ classifiers = [
 
 dependencies = ["numpy", "pandas"]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.urls]
 Repository = "https://github.com/trouillon-lab/target-predictor"
 
@@ -30,3 +33,7 @@ predict-operons = "predict_operons:main"
 
 [tool.setuptools]
 py-modules = ["assign_targets", "predict_operons"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
