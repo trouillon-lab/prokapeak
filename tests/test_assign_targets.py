@@ -21,8 +21,8 @@ def test_example_expected(tmp_path, capsys):
 
 def test_predict_operons_files(tmp_path):
     main(["--gff", str(E / "genome.gff"), "--predict-operons", "--peaks", PEAKS[0], "--out", str(tmp_path)])
-    assert (tmp_path / "predicted_operons.tsv").exists() and (tmp_path / "predicted_operon_pairs.tsv").exists()
-    assert len((tmp_path / "predicted_operons.tsv").read_text().splitlines()) > 0
+    for name in ("predicted_operons.tsv", "predicted_operon_pairs.tsv"):
+        assert filecmp.cmp(E / "expected" / name, tmp_path / name, shallow=False), name
 
 
 @pytest.mark.parametrize("args, msg", [

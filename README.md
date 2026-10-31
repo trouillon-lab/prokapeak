@@ -36,7 +36,15 @@ cd example
 python ../assign_targets.py --gff genome.gff --operons operons.tsv --tss tss.bed --peaks peaks/*.narrowPeak --out out
 ```
 
-which should match `expected/` file for file.
+which should match `expected/` file for file. `expected/predicted_operons.tsv` and `predicted_operon_pairs.tsv` are
+the operons predicted from the same genome by
+
+```bash
+python ../predict_operons.py --gff genome.gff --out expected/predicted_operons.tsv --pairs expected/predicted_operon_pairs.tsv
+```
+
+(25 operons instead of the 45 the example was built with: a genome of 100 genes is far too small for the method,
+see Predicted operons).
 
 ## Input files
 

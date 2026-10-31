@@ -1,0 +1,99 @@
+chrom	a	b	gap	class	prob
+chrom1	EX_0001	EX_0002	22	same	0.666249
+chrom1	EX_0002	EX_0003	484	divergent	
+chrom1	EX_0003	EX_0004	57	same	0.660089
+chrom1	EX_0004	EX_0005	18	same	0.666984
+chrom1	EX_0005	EX_0006	454	convergent	
+chrom1	EX_0006	EX_0007	258	divergent	
+chrom1	EX_0007	EX_0008	327	same	0.651615
+chrom1	EX_0008	EX_0009	192	convergent	
+chrom1	EX_0009	EX_0010	76	same	0.655866
+chrom1	EX_0010	EX_0011	62	same	0.658850
+chrom1	EX_0011	EX_0012	264	same	0.653118
+chrom1	EX_0012	EX_0013	423	divergent	
+chrom1	EX_0013	EX_0014	49	same	0.661573
+chrom1	EX_0014	EX_0015	44	same	0.662807
+chrom1	EX_0015	EX_0016	16	same	0.667963
+chrom1	EX_0016	EX_0017	376	same	0.650862
+chrom1	EX_0017	EX_0018	70	same	0.657608
+chrom1	EX_0018	EX_0019	330	convergent	
+chrom1	EX_0019	EX_0020	176	same	0.654618
+chrom1	EX_0020	EX_0021	277	same	0.652868
+chrom1	EX_0021	EX_0022	73	same	0.656364
+chrom1	EX_0022	EX_0023	45	same	0.662313
+chrom1	EX_0023	EX_0024	31	same	0.664530
+chrom1	EX_0024	EX_0025	154	same	0.654868
+chrom1	EX_0025	EX_0026	31	same	0.664530
+chrom1	EX_0026	EX_0027	27	same	0.665758
+chrom1	EX_0027	EX_0028	375	divergent	
+chrom1	EX_0028	EX_0029	45	same	0.662313
+chrom1	EX_0029	EX_0030	74	same	0.656115
+chrom1	EX_0030	EX_0031	41	same	0.663546
+chrom1	EX_0031	EX_0032	53	same	0.661078
+chrom1	EX_0032	EX_0033	160	convergent	
+chrom1	EX_0033	EX_0034	73	same	0.656364
+chrom1	EX_0034	EX_0035	58	same	0.659841
+chrom1	EX_0035	EX_0036	29	same	0.665513
+chrom1	EX_0036	EX_0037	420	same	0.650611
+chrom1	EX_0037	EX_0038	313	same	0.651866
+chrom1	EX_0038	EX_0039	214	divergent	
+chrom1	EX_0039	EX_0040	365	convergent	
+chrom1	EX_0040	EX_0041	328	same	0.651113
+chrom1	EX_0041	EX_0042	68	same	0.657856
+chrom1	EX_0042	EX_0043	35	same	0.664038
+chrom1	EX_0043	EX_0044	50	same	0.661326
+chrom1	EX_0044	EX_0045	220	divergent	
+chrom1	EX_0045	EX_0046	177	same	0.654369
+chrom1	EX_0046	EX_0047	21	same	0.666494
+chrom1	EX_0047	EX_0048	176	convergent	
+chrom1	EX_0048	EX_0049	43	same	0.663300
+chrom1	EX_0049	EX_0050	396	divergent	
+chrom1	EX_0050	EX_0051	190	same	0.654119
+chrom1	EX_0051	EX_0052	473	convergent	
+chrom1	EX_0052	EX_0053	61	same	0.659346
+chrom1	EX_0053	EX_0054	61	same	0.659346
+chrom1	EX_0054	EX_0055	271	divergent	
+chrom1	EX_0055	EX_0056	18	same	0.666984
+chrom1	EX_0056	EX_0057	348	convergent	
+chrom1	EX_0057	EX_0058	32	same	0.664284
+chrom1	EX_0058	EX_0059	421	divergent	
+chrom1	EX_0059	EX_0060	63	same	0.658601
+chrom1	EX_0060	EX_0061	56	same	0.660336
+chrom1	EX_0061	EX_0062	68	same	0.657856
+chrom1	EX_0062	EX_0063	79	same	0.655118
+chrom1	EX_0063	EX_0064	396	convergent	
+chrom1	EX_0064	EX_0065	288	same	0.652116
+chrom1	EX_0065	EX_0066	48	same	0.661820
+chrom1	EX_0066	EX_0067	260	same	0.653369
+chrom1	EX_0067	EX_0068	387	divergent	
+chrom1	EX_0068	EX_0069	38	same	0.663792
+chrom1	EX_0069	EX_0070	328	same	0.651113
+chrom1	EX_0070	EX_0071	47	same	0.662067
+chrom1	EX_0071	EX_0072	73	same	0.656364
+chrom1	EX_0072	EX_0073	62	same	0.658850
+chrom1	EX_0073	EX_0074	44	same	0.662807
+chrom1	EX_0074	EX_0075	285	same	0.652367
+chrom1	EX_0075	EX_0076	71	same	0.657359
+chrom1	EX_0076	EX_0077	54	same	0.660831
+chrom1	EX_0077	EX_0078	68	same	0.657856
+chrom1	EX_0078	EX_0079	56	same	0.660336
+chrom1	EX_0079	EX_0080	278	same	0.652618
+chrom1	EX_0080	EX_0081	282	convergent	
+chrom1	EX_0081	EX_0082	201	same	0.653869
+chrom1	EX_0082	EX_0083	24	same	0.666003
+chrom1	EX_0083	EX_0084	183	divergent	
+chrom1	EX_0084	EX_0085	17	same	0.667718
+chrom1	EX_0085	EX_0086	79	same	0.655118
+chrom1	EX_0086	EX_0087	341	convergent	
+chrom1	EX_0087	EX_0088	14	same	0.668451
+chrom1	EX_0088	EX_0089	217	divergent	
+chrom1	EX_0089	EX_0090	78	same	0.655616
+plasmid1	EX_0091	EX_0092	21	same	0.666494
+plasmid1	EX_0092	EX_0093	15	same	0.668207
+plasmid1	EX_0093	EX_0094	213	convergent	
+plasmid1	EX_0094	EX_0095	31	same	0.664530
+plasmid1	EX_0095	EX_0096	228	same	0.653619
+plasmid1	EX_0096	EX_0097	73	same	0.656364
+plasmid1	EX_0097	EX_0098	18	same	0.666984
+plasmid1	EX_0098	EX_0099	378	divergent	
+plasmid1	EX_0099	EX_0100	30	same	0.665267
