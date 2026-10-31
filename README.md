@@ -7,7 +7,7 @@ Genes transcribed together in one operon are assigned together.
 
 Status: the default mode (operons + TSS map + start-codon fallback), runs
 without an operon file or without a TSS map, the options `--no-gene-start`, `--no-internal` and `--tss-to-gene`,
-the `CDS` fallback, plain operon ids and genomes with two chromosomes give the expected results
+plain operon ids and genomes with two chromosomes give the expected results
 on small artificial test data.
 
 ## Requirements
@@ -43,16 +43,17 @@ ending on a gene boundary, linked TSSs whose gene is not found, genes in no oper
 
 ### `--gff` genome annotation (required)
 
-GFF3. `gene` features are read; a `CDS` feature is used for a locus that has no `gene` row. Every feature needs a
-`locus_tag` attribute, which is the gene identifier used in all other files and in the output.
+GFF3. Rows of the listed feature types are read (`--gff-feature`, default `gene,CDS`); a locus with several rows,
+of one type or of several, spans all of them. Every row needs the attribute holding the gene identifier
+(`--gff-attribute`, default `locus_tag`), which is used in all other files and in the output.
 
 | column | used |
 |---|---|
 | 1 seqid | chromosome |
-| 3 type | `gene`, else `CDS` |
+| 3 type | one of `--gff-feature` (default `gene,CDS`) |
 | 4 start, 5 end | 1-based, inclusive |
 | 7 strand | `+` or `-`; the start codon is `start` on `+` and `end` on `-` |
-| 9 attributes | `locus_tag=...` |
+| 9 attributes | `<--gff-attribute>=...` |
 
 ### `--peaks` peak files (required, one or more)
 
@@ -133,6 +134,8 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 
 | option | effect |
 |---|---|
+| `--gff-feature` | GFF feature types to read, comma-separated (default `gene,CDS`); a locus spans all its rows |
+| `--gff-attribute` | GFF attribute holding the gene id (default `locus_tag`) |
 | `--no-gene-start` | no start-codon windows; units without a TSS are not assigned |
 | `--no-internal` | operon starts only, no internal units |
 | `--tss-to-gene` | a hit through a TSS assigns only the gene the TSS starts |

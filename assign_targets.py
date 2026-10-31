@@ -9,10 +9,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-win = lambda x: tuple(int(v) for v in x.split(","))
+win, lst = lambda x: tuple(int(v) for v in x.split(",")), lambda x: x.split(",")
 ap = argparse.ArgumentParser(description=__doc__, epilog="Windows are up,down in bp (negative = upstream); "
                              "pass them as --tss-window=-200,100.")
-ap.add_argument("--gff", required=True, help="GFF3; gene features with locus_tag (CDS where a gene has no gene row)")
+ap.add_argument("--gff", required=True, help="GFF3 genome annotation")
+ap.add_argument("--gff-feature", type=lst, default="gene,CDS", help="GFF feature types to read; a locus with several "
+                "rows spans them all")
+ap.add_argument("--gff-attribute", default="locus_tag", help="GFF attribute holding the gene id")
 ap.add_argument("--peaks", required=True, nargs="+", help="MACS3 narrowPeak file(s), one TF each, named by the file name")
 ap.add_argument("--out", required=True, help="output folder; one <TF>_assigned_peaks.bed per peak file, one row per peak "
                 "x target gene: chrom, summit start, summit end, target, peak_score, target strand, signal, pscore, qscore, "
@@ -28,17 +31,22 @@ ap.add_argument("--internal-window", type=win, default="-250,50", help="internal
 a = ap.parse_args()
 warn = lambda m: print("warning:", m, file=sys.stderr)
 
-rows = []
+rows, types, attrs = [], set(), set()
 for line in open(a.gff):
     f = line.rstrip("\r\n").split("\t")
-    if line.startswith("#") or len(f) < 9 or f[2] not in ("gene", "CDS"):
+    if line.startswith("#") or len(f) < 9:
         continue
-    if m := re.search(r"(?:^|;)locus_tag=([^;]+)", f[8]):
-        rows.append((f[2], m.group(1), f[0], int(f[3]), int(f[4]), f[6]))
-g = pd.DataFrame(rows, columns=["type", "locus", "chrom", "start", "end", "strand"])
-g = g[(g.type == "gene") | ~g.locus.isin(g.locus[g.type == "gene"])].drop_duplicates("locus")
+    types.add(f[2])
+    if f[2] in a.gff_feature:
+        attrs.update(x.partition("=")[0] for x in f[8].split(";"))
+        if m := re.search(rf"(?:^|;){re.escape(a.gff_attribute)}=([^;]+)", f[8]):
+            rows.append((m.group(1), f[0], int(f[3]), int(f[4]), f[6]))
+g = pd.DataFrame(rows, columns=["locus", "chrom", "start", "end", "strand"])
+g = g.groupby("locus", sort=False).agg({"chrom": "first", "start": "min", "end": "max", "strand": "first"}).reset_index()
 if g.empty:
-    raise SystemExit("gff: no gene or CDS feature with a locus_tag attribute")
+    raise SystemExit(f"gff: no {'/'.join(a.gff_feature)} feature with a {a.gff_attribute} attribute. Feature types in the "
+                     f"file: {', '.join(sorted(types))}; attributes of the {'/'.join(a.gff_feature)} rows: "
+                     f"{', '.join(sorted(attrs)) or 'none'}. Set --gff-feature and --gff-attribute to match.")
 sc = dict(zip(g.locus, np.where(g.strand == "+", g.start, g.end)))
 strand, chrom = dict(zip(g.locus, g.strand)), dict(zip(g.locus, g.chrom))
 g_start, g_end = dict(zip(g.locus, g.start - 1)), dict(zip(g.locus, g.end))  # BED, 0-based start
