@@ -62,7 +62,7 @@ def read_genome(gff, features=("gene", "CDS"), attribute="locus_tag"):
 
 
 def build_units(g, operons=None, tss=None, tss_window=TSS_WINDOW, start_window=START_WINDOW,
-                internal_window=INTERNAL_WINDOW, no_internal=False, no_gene_start=False, tss_to_gene=False):
+                internal_window=INTERNAL_WINDOW, no_internal=False, no_gene_start=False):
     """Units to assign (operon starts, internal starts or single genes) with anchor and window, list of warnings.
     operons: table with operon id and comma-separated locus tags per row; tss: BED6 table; from read_table, or None."""
     w = []
@@ -88,30 +88,23 @@ def build_units(g, operons=None, tss=None, tss_window=TSS_WINDOW, start_window=S
     listed = {x for u in base for x in u["genes"]}
     base += [dict(operon=".", internal=False, genes=[x]) for x in g.locus if x not in listed]  # single-gene units
 
-    links = {}  # linked gene -> [(position, gene list on the TSS's strand and chromosome)]
+    links = {}  # gene -> positions of the TSSs that start it, on its strand and chromosome
     if tss is not None:
         t = tss.iloc[:, :6].set_axis(["chrom", "start", "end", "name", "score", "strand"], axis=1)
-        lost = 0
-        for r in t.itertuples():
-            lst = [x.strip() for x in r.name.partition("|")[2].split(",")]
-            same = [x for x in lst if strand.get(x) == r.strand and chrom.get(x) == r.chrom]
-            if same and same[0] == lst[0]:
-                links.setdefault(lst[0], []).append((r.end, same))
-            elif lst[0] not in ("", "."):
-                lost += 1
-        if lost:
+        ok = (t["name"].map(strand) == t.strand) & (t["name"].map(chrom) == t.chrom)
+        for r in t[ok].itertuples():
+            links.setdefault(r.name, []).append(r.end)
+        if lost := (~ok & ~t["name"].isin(["", "."])).sum():
             w.append(f"tss: {lost}/{len(t)} linked rows skipped: gene unknown or on another strand or chromosome")
         if not links:
-            w.append("tss: no usable TSS (name must be <tss_id>|<locus_tag>), all units use start-codon windows")
+            w.append("tss: no usable TSS (name must be the locus tag of the gene it starts), all units use start-codon windows")
 
     rows = []
     for u in base:
         first = u["genes"][0]
         u.update(chrom=chrom[first], strand=strand[first])
-        for pos, lst in links.get(first, []):
-            genes = [first] if tss_to_gene else u["genes"] if operons is not None else lst
-            rows.append({**u, "genes": genes, "anchor": "TSS", "anchor_pos": pos, "up": tss_window[0],
-                         "down": tss_window[1], "operon": first if operons is None and len(genes) > 1 else u["operon"]})
+        for pos in links.get(first, []):
+            rows.append({**u, "anchor": "TSS", "anchor_pos": pos, "up": tss_window[0], "down": tss_window[1]})
         if first not in links and not no_gene_start:
             lo, hi = internal_window if u["internal"] else start_window
             rows.append({**u, "anchor": "start_codon", "anchor_pos": sc[first], "up": lo, "down": hi})
@@ -189,10 +182,9 @@ def main(argv=None):
                     "x target gene: chrom, summit start, summit end, target, peak_score, target strand, signal, pscore, qscore, "
                     "target_chrom, target_start, target_end, peak_id, operon, anchor (TSS/start_codon), distance_to_anchor")
     ap.add_argument("--operons", help="operon map: tab-separated, operon id and its genes (comma-separated), one row per operon")
-    ap.add_argument("--tss", help="TSS BED6 (TSS = end); name = <tss_id>|<locus_tags 5'->3'>, '.' = unlinked")
+    ap.add_argument("--tss", help="TSS BED6 (TSS = end); name = locus tag of the gene the TSS starts, '.' = unlinked")
     ap.add_argument("--no-gene-start", action="store_true", help="no start-codon windows; units without a TSS are not assigned")
     ap.add_argument("--no-internal", action="store_true", help="no internal units (operon starts only)")
-    ap.add_argument("--tss-to-gene", action="store_true", help="a hit through a TSS links only its linked gene")
     ap.add_argument("--tss-window", type=win, default="%d,%d" % TSS_WINDOW, help="window around a linked TSS")
     ap.add_argument("--start-window", type=win, default="%d,%d" % START_WINDOW, help="operon-start window around the start codon")
     ap.add_argument("--internal-window", type=win, default="%d,%d" % INTERNAL_WINDOW, help="internal window around the start codon")
@@ -203,8 +195,7 @@ def main(argv=None):
         g, w = read_genome(a.gff, a.gff_feature, a.gff_attribute)
         op = read_table(a.operons, 2, "operon file: operon id, locus tags", num=()) if a.operons and ext(a.operons, ".tsv") else None
         ts = read_table(a.tss, 6, "TSS file: BED6") if a.tss and ext(a.tss, ".bed") else None
-        units, w2 = build_units(g, op, ts, a.tss_window, a.start_window, a.internal_window, a.no_internal,
-                                a.no_gene_start, a.tss_to_gene)
+        units, w2 = build_units(g, op, ts, a.tss_window, a.start_window, a.internal_window, a.no_internal, a.no_gene_start)
         for m in w + w2:
             warn(m)
         if units.empty:
