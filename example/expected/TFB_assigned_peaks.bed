@@ -1,3 +1,4 @@
+#chrom	start	end	target	peak_score	strand	signal	pscore	qscore	target_chrom	target_start	target_end	peak_id	operon	anchor	distance_to_anchor
 chrom1	5676	5677	EX_0006	968	-	38.73	116.19	96.82	chrom1	4947	5394	TFB_peak_1	op3	TSS	-137
 chrom1	5691	5692	EX_0006	845	-	33.82	101.46	84.55	chrom1	4947	5394	TFB_peak_2	op3	TSS	-152
 chrom1	10072	10073	EX_0011	416	-	16.65	49.95	41.62	chrom1	9476	9968	TFB_peak_3	op6	TSS	41
