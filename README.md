@@ -1,12 +1,11 @@
-<img align="left" width="200" src="https://raw.githubusercontent.com/trouillon-lab/prokapeak/main/images/ProkaPeak_logo.png" />
+<img align="left" width="170" src="images/ProkaPeak_logo.png" />
 
 ### A Python package to assign **Proka**ryotic **Peak**s to target genes.
-#### ➡️ [_ProkaPeak web app_](https://poolpy.trouillonlab.org/)
+#### ➡️ [_ProkaPeak web app_](https://prokapeak.trouillonlab.org/)
 &nbsp;
 
 &nbsp;
-
-&nbsp;
+<br clear="left"/>
 
 # ProkaPeak
 
@@ -20,15 +19,16 @@ ProkaPeak uses default window sizes and peak assignment rules chosen to maximize
 binding sites. All parameters are optionally modifiable.
 
 ### Web app
-In addition to the Python package, we provide the [ProkaPeak web app](https://poolpy.trouillonlab.org/), which allows for flexible peak assignment with visualisation of summary metrics. The web app allows to assign multiple peak files simultaneously, provides pre-made TSS and operon maps for selected bacterial species, and runs entirely locally in the user's browser without the need of data upload.
+In addition to the Python package, we provide the [ProkaPeak web app](https://prokapeak.trouillonlab.org/), which allows for flexible peak assignment with visualisation of summary metrics. The web app allows to assign multiple peak files simultaneously, provides pre-made TSS and operon maps for selected bacterial species, and runs entirely locally in the user's browser without the need of data upload.
 
 ## Installation
 
 ```bash
-pip install git+https://github.com/trouillon-lab/prokapeak
+pip install prokapeak
 ```
 
-Python ≥ 3.9; installs numpy ≥ 1.21, pandas ≥ 1.4 and the commands `prokapeak` and `prokapeak-operons`.
+Python ≥ 3.9; installs numpy ≥ 1.21, pandas ≥ 1.4 and the commands `prokapeak` and `prokapeak-operons`. The
+development version installs with `pip install git+https://github.com/trouillon-lab/prokapeak`.
 
 ## Usage
 
@@ -46,8 +46,9 @@ take the resulting tables; `main()` is the command line.
 
 ## Example
 
-`example/` holds an artificial genome to show the file formats: 100 genes on two chromosomes (`chrom1`,
-`plasmid1`), 45 operons, 28 TSSs and peak files for four made-up TFs. `example/expected/` is the output of
+`example/` in the [repository](https://github.com/trouillon-lab/prokapeak) holds an artificial genome to show the file
+formats: 100 genes on two chromosomes (`chrom1`, `plasmid1`), 45 operons, 28 TSSs and peak files for four made-up
+TFs. `example/expected/` is the output of
 
 ```bash
 cd example
