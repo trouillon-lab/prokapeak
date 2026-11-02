@@ -59,3 +59,9 @@ def test_overlap_ties_keep_both(rule):
     """A summit midway between two divergent anchors: the order of the units must not decide."""
     h = pd.DataFrame({"p": 0, "u": [0, 1], "d": [150, 150], "s": [1, -1], "uid": [0, 1]})
     assert resolve(h, rule, rule).u.tolist() == [0, 1]
+
+
+def test_overlap_rule_checked():
+    h = pd.DataFrame({"p": 0, "u": [0, 1], "d": [10, 300], "s": 1, "uid": [0, 1]})
+    with pytest.raises(ValueError, match="nearest"):
+        resolve(h, "nearest")

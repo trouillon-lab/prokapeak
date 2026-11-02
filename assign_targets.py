@@ -120,6 +120,8 @@ def build_units(g, operons=None, tss=None, tss_window=TSS_WINDOW, start_window=S
 def resolve(h, same_strand=SAME_STRAND, opp_strand=OPP_STRAND):
     """Overlapping windows: every rule deciding which window a summit is assigned to lives here.
     h: one row per summit p x unit row u whose window holds it (|distance| d, strand s); rules: see OVERLAP_RULES."""
+    if bad := {same_strand, opp_strand} - set(OVERLAP_RULES):
+        raise ValueError(f"overlap rule {', '.join(sorted(bad))}: choose from {', '.join(OVERLAP_RULES)}")
     h = h.sort_values("d", kind="stable").drop_duplicates(["p", "uid"])  # 1. one anchor per unit: the nearest TSS
     pick = {"closest": "min", "farthest": "max"}
     if same_strand != "both":                               # 2. units on one strand: the nearest or the farthest
