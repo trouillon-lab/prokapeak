@@ -19,7 +19,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
-dependencies = ["numpy", "pandas"]
+dependencies = ["numpy>=1.21", "pandas>=1.4"]
 
 [project.optional-dependencies]
 test = ["pytest"]

@@ -13,7 +13,7 @@ two chromosomes give the expected results on small artificial test data; all nin
 
 ## Requirements
 
-Python ≥ 3.8 with numpy and pandas.
+Python ≥ 3.9 with numpy ≥ 1.21 and pandas ≥ 1.4.
 
 ## Usage
 
