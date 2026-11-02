@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from assign_targets import assign, build_units, main, read_genome
+from assign_targets import assign, build_units, main, read_genome, resolve
 
 ROOT = Path(__file__).resolve().parents[1]
 E = ROOT / "example"
@@ -52,3 +52,10 @@ def test_one_row_per_peak_and_gene():
     pk = pd.DataFrame([["c", 999, 1000, "pk", 0, ".", 0.0, 0.0, 0.0, 0]])
     bed, _, _ = assign(units, g, pk, np.array([1000]), "both", "closest")
     assert bed.target.tolist() == ["A", "B", "C"] and (bed.distance_to_anchor == -1).all()
+
+
+@pytest.mark.parametrize("rule", ["closest", "farthest"])
+def test_overlap_ties_keep_both(rule):
+    """A summit midway between two divergent anchors: the order of the units must not decide."""
+    h = pd.DataFrame({"p": 0, "u": [0, 1], "d": [150, 150], "s": [1, -1], "uid": [0, 1]})
+    assert resolve(h, rule, rule).u.tolist() == [0, 1]

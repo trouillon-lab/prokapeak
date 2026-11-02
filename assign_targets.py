@@ -121,13 +121,13 @@ def resolve(h, same_strand=SAME_STRAND, opp_strand=OPP_STRAND):
     """Overlapping windows: every rule deciding which window a summit is assigned to lives here.
     h: one row per summit p x unit row u whose window holds it (|distance| d, strand s); rules: see OVERLAP_RULES."""
     h = h.sort_values("d", kind="stable").drop_duplicates(["p", "uid"])  # 1. one anchor per unit: the nearest TSS
-    near = h.s == h.groupby("p").s.transform("first")      # the strand with the nearest anchor
+    pick = {"closest": "min", "farthest": "max"}
     if same_strand != "both":                               # 2. units on one strand: the nearest or the farthest
-        h = h.drop_duplicates(["p", "s"], keep="first" if same_strand == "closest" else "last")
-    if opp_strand != "both":                                # 3. the two strands: the nearest or the other one
-        two = h.groupby("p").s.transform("nunique") == 2
-        h = h[~two | (near[h.index] if opp_strand == "closest" else ~near[h.index])]
-    return h.sort_values(["p", "u"])
+        h = h[h.d == h.groupby(["p", "s"]).d.transform(pick[same_strand])]
+    if opp_strand != "both":                                # 3. the two strands, by the units kept in 2.
+        m = h.groupby(["p", "s"]).d.transform("min")        # each strand's nearest kept anchor
+        h = h[m == m.groupby(h.p).transform(pick[opp_strand])]
+    return h.sort_values(["p", "u"])                        # ties in 2. and 3. keep all tied units
 
 
 def read_peaks(path, fmt):

@@ -143,7 +143,8 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 1. A unit with several TSSs is assigned once, through the TSS nearest the summit.
 2. Of several units on one strand, only the one with the nearest anchor is assigned (`--same-strand`).
 3. A summit in windows on both strands (between divergent genes) is assigned only on the strand with the nearest
-   anchor (`--opp-strand`).
+   anchor (`--opp-strand`), compared over the units kept by rule 2.
+   Units or strands tied in distance are all kept.
 4. An assigned unit assigns all its genes; a gene assigned through several units is listed once, through the
    nearest anchor.
 
