@@ -1,22 +1,34 @@
+<img align="left" width="200" src="https://raw.githubusercontent.com/trouillon-lab/prokapeak/main/images/ProkaPeak_logo.png" />
+
+### A Python package to assign **Proka**ryotic **Peak**s to target genes.
+#### ➡️ [_ProkaPeak web app_](https://poolpy.trouillonlab.org/)
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
 # ProkaPeak
 
-ProkaPeak (`assign_targets.py`) assigns transcription factor (TF) binding peaks from ChIP-seq or DAP-seq, called with MACS3, to the genes they
-probably regulate. A peak is assigned to a gene when its summit (the single base with the highest signal) lies in
-a window around that gene's transcription start site (TSS), or, where no TSS is known, around its start codon.
-Genes transcribed together in one operon are assigned together. Without an operon map, `predict_operons.py`
-predicts operons from gene spacing.
+ProkaPeak assigns transcription factor (TF) binding peaks from ChIP-seq, DAP-seq, or similar assays to the genes
+they likely regulate. A peak is assigned to a gene when its summit (the single base with the highest signal) lies in
+a window around that gene's start or transcription start site (TSS), depending on available annotation. 
 
-Status: the default mode (operons + TSS map + start-codon fallback), runs
-without an operon file or without a TSS map, the options `--no-gene-start` and `--no-internal`, and genomes with
-two chromosomes give the expected results on small artificial test data; all nine combinations of
-`--same-strand` and `--opp-strand` give the expected units on a small artificial table of overlapping windows (`tests/`).
+ProkaPeak can run with only a peak list and gene annotation, but also supports 
+both TSS and operon information for more precise predictions. If no operon information is provided, ProkaPeak can predict operons first.
+ProkaPeak uses default window sizes and peak assignment rules chosen to maximize target gene recovery, as defined based on experimental
+binding sites. All parameters are optionally modifiable.
 
-## Requirements
+### Web app
+In addition to the Python package, we provide the [ProkaPeak web app](https://poolpy.trouillonlab.org/), which allows for flexible peak assignment with visualisation of summary metrics. The web app allows to assign multiple peak files simultaneously, provides pre-made TSS and operon maps for selected bacterial species, and runs entirely locally in the user's browser without the need of data upload.
 
-Python ≥ 3.9 with numpy ≥ 1.21 and pandas ≥ 1.4. `pip install git+https://github.com/trouillon-lab/prokapeak`
-(or `pip install .` in a clone) installs them and two commands: `prokapeak`, which runs `assign_targets.py`, and
-`prokapeak-operons`, which runs `predict_operons.py`. Without installing, run the scripts with `python`; the options
-are the same.
+## Installation
+
+```bash
+pip install git+https://github.com/trouillon-lab/prokapeak
+```
+
+Python ≥ 3.9; installs numpy ≥ 1.21, pandas ≥ 1.4 and the commands `prokapeak` and `prokapeak-operons`.
 
 ## Usage
 
@@ -24,11 +36,13 @@ are the same.
 prokapeak --gff genome.gff --peaks peaks/*.narrowPeak --operons operons.tsv --tss tss.bed --out out/
 ```
 
-Only `--gff`, `--peaks` and `--out` are required. `--predict-operons` replaces `--operons` with operons predicted
-from gene spacing (see Predicted operons). Each peak file is processed in turn and gives one output file.
+Without installing, `python assign_targets.py` in a clone takes the same options (`python predict_operons.py` for
+`prokapeak-operons`). Only `--gff`, `--peaks` and `--out` are required. `--predict-operons` replaces `--operons`
+with operons predicted from gene spacing (see Predicted operons). Each peak file is processed in turn and gives one
+output file.
 
-The script can also be imported: `read_genome`, `build_units`, `read_peaks` and `assign` take paths or open files and
-return tables and warning lists; `main()` is the command line.
+`assign_targets` can also be imported: `read_genome` and `read_peaks` read the input files, `build_units` and `assign`
+take the resulting tables; `main()` is the command line.
 
 ## Example
 
@@ -37,14 +51,14 @@ return tables and warning lists; `main()` is the command line.
 
 ```bash
 cd example
-python ../assign_targets.py --gff genome.gff --operons operons.tsv --tss tss.bed --peaks peaks/*.narrowPeak --out out
+prokapeak --gff genome.gff --operons operons.tsv --tss tss.bed --peaks peaks/*.narrowPeak --out out
 ```
 
 which should match `expected/` file for file. `expected/predicted_operons.tsv` and `predicted_operon_pairs.tsv` are
 the operons predicted from the same genome by
 
 ```bash
-python ../predict_operons.py --gff genome.gff --out expected/predicted_operons.tsv --pairs expected/predicted_operon_pairs.tsv
+prokapeak-operons --gff genome.gff --out expected/predicted_operons.tsv --pairs expected/predicted_operon_pairs.tsv
 ```
 
 (25 operons instead of the 45 the example was built with: a genome of 100 genes is far too small for the method,
@@ -54,8 +68,9 @@ see Predicted operons).
 
 All coordinates refer to the same genome; the chromosome name (column 1, or the GFF seqid) must be written
 identically in every file. Genomes with several chromosomes or plasmids are supported. Files are plain text, named
-by format: `.gff` or `.gff3`, `.tsv`, `.bed`, `.narrowPeak`; a file of the wrong shape (columns, header lines, non-integer
-coordinates, missing summits) stops the run with a message naming it.
+by format: `.gff` or `.gff3`, `.tsv`, `.bed`, `.narrowPeak`. Lines starting with `#` are skipped and extra columns are
+ignored; a missing file or a file of the wrong shape (too few columns, header lines, non-integer coordinates, missing
+summits) stops the run with a message naming it.
 Rows that cannot be matched to the annotation (loci with rows on several chromosomes or strands, peaks on unknown
 chromosomes, operon genes not in the GFF, operons with genes on several chromosomes or strands, linked
 TSSs whose gene is not found) are counted in warnings on stderr.
@@ -77,8 +92,8 @@ of one type or of several, spans all of them. Every row needs the attribute hold
 ### `--peaks` peak files (required, one or more)
 
 One file per TF, either MACS3 narrowPeak (`.narrowPeak`, 10 tab-separated columns, no header) or a BED file of
-summits (`.bed`, every row a 1-bp interval at the summit, as in MACS3 `NAME_summits.bed`; columns 4 and 5 are
-copied to the output, signal, pscore and qscore are written as `.`).
+summits (`.bed`, at least 3 columns, every row a 1-bp interval at the summit, as in MACS3 `NAME_summits.bed`). Both
+give the same assignments; a summit BED has no signal, p- or q-value, so those output columns are `.` (see Output).
 
 | column | content |
 |---|---|
@@ -93,8 +108,7 @@ copied to the output, signal, pscore and qscore are written as `.`).
 | 10 peak | summit offset from column 2 |
 
 The summit is column 2 + column 10 (0-based), or column 3 of a summit BED. The TF name is the file name without
-extension, so file names must
-be distinct. An empty peak file gives an empty output file.
+extension, so file names must be distinct. An empty peak file gives an output file with only the header line.
 
 ### `--operons` operon map (optional)
 
@@ -124,7 +138,7 @@ BED6, tab-separated, no header, one row per TSS.
 A TSS is an anchor for the unit its gene starts: the operon or internal unit beginning with that gene, or the gene
 itself. TSSs that are unlinked, or whose gene is not in the GFF or lies on another strand or chromosome, are skipped.
 
-Example: `NC_000913.3  336  337  b0001  0  +`
+Example: `NC_000913.3  147  148  b0001  0  +`
 
 ## Assignment
 
@@ -137,7 +151,7 @@ units. Without `--operons`, every gene is a unit.
 | unit | anchor | default | option |
 |---|---|---|---|
 | any unit with a linked TSS | the TSS | −200 to +100 | `--tss-window` |
-| operon start without a TSS | start codon of the first gene | −400 to +25 | `--start-window` |
+| operon start or single gene without a TSS | start codon of the first gene | −400 to +25 | `--start-window` |
 | internal start without a TSS | start codon of that gene | −250 to +50 | `--internal-window` |
 
 Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is not read as an option.
@@ -153,17 +167,25 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 
 ## Predicted operons
 
-Without an operon map, `prokapeak-operons` can predict operons from gene spacing using the method from UniOP (Su,
-Zhang and Söding, bioRxiv 2024, doi:10.1101/2024.11.11.623000). Pairs at or above the cutoff (default 0.5) are joined;
-operons of two or more genes are written in the operon map format.
+Without an operon map, operons can be predicted from gene spacing using the method from UniOP (Su, Zhang and
+Söding, bioRxiv 2024, doi:10.1101/2024.11.11.623000). Pairs at or above the cutoff (default 0.5) are joined; operons
+of two or more genes are kept, in the operon map format.
+
+The simplest is to predict them as part of the run, with `--predict-operons` in place of `--operons`:
+
+```bash
+prokapeak --gff genome.gff --peaks peaks/*.narrowPeak --predict-operons --out out/
+```
+
+`predicted_operons.tsv` and `predicted_operon_pairs.tsv` are written into `--out`; `--operon-cutoff` sets the cutoff.
+
+Alternatively, `prokapeak-operons` predicts them on their own, to inspect them or pass them later to `--operons`:
 
 ```bash
 prokapeak-operons --gff genome.gff --out operons.tsv [--pairs pairs.tsv] [--cutoff 0.5]
 ```
 
-`--gff-feature` and `--gff-attribute` work as in `prokapeak`. In `prokapeak`, `--predict-operons`
-replaces `--operons` and writes `predicted_operons.tsv` and `predicted_operon_pairs.tsv` into `--out`;
-`--operon-cutoff` sets the cutoff. The pair table has one row per pair of consecutive genes:
+`--gff-feature` and `--gff-attribute` work as in `prokapeak`. The pair table has one row per pair of consecutive genes:
 
 | column | content |
 |---|---|
@@ -195,21 +217,28 @@ separating the pairs and nearly all same-strand neighbours are joined.
 ## Output
 
 One `<TF>_assigned_peaks.bed` per peak file in `--out`: tab-separated, a `#` header line naming the columns, then
-one row per peak and assigned gene, sorted by position. A peak assigned to an operon of four genes gives four rows.
+one row per peak and assigned gene, sorted by position. A peak assigned to an operon of four genes gives four rows;
+a peak in no window is not listed. With `--predict-operons`, `--out` also holds `predicted_operons.tsv` and
+`predicted_operon_pairs.tsv` (see Predicted operons).
 
 | column | content |
 |---|---|
 | 1 chrom | chromosome of the peak |
 | 2 start, 3 end | summit as a 1-bp interval (0-based start) |
 | 4 target | locus tag of the assigned gene |
-| 5 peak_score | narrowPeak column 5 |
+| 5 peak_score | column 5 of the peak file; `.` for a 3-column summit BED |
 | 6 strand | strand of the target gene |
-| 7 signal, 8 pscore, 9 qscore | narrowPeak columns 7–9 |
+| 7 signal, 8 pscore, 9 qscore | narrowPeak columns 7–9; `.` for a summit BED |
 | 10 target_chrom | chromosome of the target gene |
 | 11 target_start, 12 target_end | target gene coordinates (0-based start) |
-| 13 peak_id | narrowPeak column 4 |
+| 13 peak_id | column 4 of the peak file; `.` for a 3-column summit BED |
 | 14 operon | operon id, `.` for a gene in no operon |
 | 15 anchor | `TSS` or `start_codon` |
 | 16 distance_to_anchor | summit minus anchor, along the target's strand (negative = upstream) |
 
-The script prints one line per TF: peaks assigned and number of target genes.
+`prokapeak` prints one line per TF: peaks assigned and number of target genes.
+
+## License
+
+ProkaPeak is released under the [MIT License](https://github.com/trouillon-lab/prokapeak/blob/main/LICENSE),
+copyright (c) 2026 Trouillon lab.
