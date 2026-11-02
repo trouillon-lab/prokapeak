@@ -1,0 +1,5 @@
+graft example
+prune example/out
+graft tests/data
+include tests/uniop_fixtures.sh
+global-exclude __pycache__ *.py[cod] .DS_Store
