@@ -10,8 +10,8 @@
 # ProkaPeak
 
 ProkaPeak assigns transcription factor (TF) binding peaks from ChIP-seq, DAP-seq, or similar assays to the genes
-they likely regulate. A peak is assigned to a gene when its summit (the single base with the highest signal) lies in
-a window around that gene's start or transcription start site (TSS), depending on available annotation. 
+they likely regulate. A peak is assigned to a gene when its summit lies in a window around that gene's start or 
+transcription start site (TSS), depending on available annotation. 
 
 ProkaPeak can run with only a peak list and gene annotation, but also supports 
 both TSS and operon information for more precise predictions. If no operon information is provided, ProkaPeak can predict operons first.
