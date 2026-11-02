@@ -25,7 +25,7 @@ dependencies = ["numpy", "pandas"]
 test = ["pytest"]
 
 [project.urls]
-Repository = "https://github.com/trouillon-lab/target-predictor"
+Repository = "https://github.com/trouillon-lab/prokapeak"
 
 [project.scripts]
 assign-targets = "assign_targets:main"
