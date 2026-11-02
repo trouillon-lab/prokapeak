@@ -8,7 +8,8 @@ predicts operons from gene spacing.
 
 Status: the default mode (operons + TSS map + start-codon fallback), runs
 without an operon file or without a TSS map, the options `--no-gene-start` and `--no-internal`, and genomes with
-two chromosomes give the expected results on small artificial test data.
+two chromosomes give the expected results on small artificial test data; all nine combinations of `--same-strand` and `--divergent` give the expected units on a small
+artificial table of overlapping windows.
 
 ## Requirements
 
@@ -140,8 +141,9 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 
 **Overlapping windows** (function `resolve` in the script).
 1. A unit with several TSSs is assigned once, through the TSS nearest the summit.
-2. Of several units on one strand, only the one with the nearest anchor is assigned.
-3. A summit in windows on both strands (between divergent genes) is assigned on both.
+2. Of several units on one strand, only the one with the nearest anchor is assigned (`--same-strand`).
+3. A summit in windows on both strands (between divergent genes) is assigned only on the strand with the nearest
+   anchor (`--divergent`).
 4. An assigned unit assigns all its genes.
 
 ## Predicted operons
@@ -181,6 +183,8 @@ separating the pairs and nearly all same-strand neighbours are joined.
 | `--operon-cutoff` | pair probability that joins two genes for `--predict-operons` (default 0.5) |
 | `--no-gene-start` | no start-codon windows; units without a TSS are not assigned |
 | `--no-internal` | operon starts only, no internal units |
+| `--same-strand closest\|both\|farthest` | a summit in windows of several units on one strand: assign the unit with the nearest anchor (default), all of them, or the one with the farthest anchor |
+| `--divergent closest\|both\|farthest` | a summit in windows on both strands: assign the strand with the nearest anchor (default), both strands, or only the other strand |
 | `--tss-window`, `--start-window`, `--internal-window` | window `up,down` in bp |
 
 ## Output

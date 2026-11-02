@@ -115,12 +115,20 @@ def build_units(g, operons=None, tss=None, tss_window=TSS_WINDOW, start_window=S
     return pd.DataFrame(rows), w
 
 
-def resolve(h):
+def resolve(h, same_strand="closest", divergent="closest"):
     """Overlapping windows: every rule deciding which window a summit is assigned to lives here.
-    h: one row per summit p x unit row u whose window holds it (|distance| d, strand s)."""
+    h: one row per summit p x unit row u whose window holds it (|distance| d, strand s).
+    same_strand: of several units on one strand, keep the one with the nearest anchor (closest), all (both) or the one
+    with the farthest anchor (farthest). divergent: of a summit in windows on both strands, keep the strand with the
+    nearest anchor (closest), both strands (both) or the other strand (farthest)."""
     h = h.sort_values("d", kind="stable").drop_duplicates(["p", "uid"])  # 1. one anchor per unit: the nearest TSS
-    h = h.drop_duplicates(["p", "s"])                       # 2. one unit per strand: the nearest anchor; both strands
-    return h.sort_values(["p", "u"])
+    on_strand = h.groupby(["p", "s"])
+    rank, n = on_strand.cumcount(), on_strand.p.transform("size")  # rank 0 = nearest anchor on the strand
+    keep = {"closest": rank == 0, "both": rank >= 0, "farthest": rank == n - 1}[same_strand]  # 2. units on one strand
+    near = h.s == h.groupby("p").s.transform("first")  # the strand with the nearest anchor
+    two = h.groupby("p").s.transform("nunique") == 2
+    keep &= {"closest": near, "both": near | two, "farthest": ~near | ~two}[divergent]  # 3. the two strands
+    return h[keep].sort_values(["p", "u"])
 
 
 def read_peaks(path, fmt):
@@ -136,8 +144,9 @@ def read_peaks(path, fmt):
     return pk.reindex(columns=range(10), fill_value="."), pk[2].to_numpy(int)
 
 
-def assign(units, g, pk, summits):
-    """One TF: peak table and summits -> output table (one row per peak x target gene), peaks assigned, warnings."""
+def assign(units, g, pk, summits, same_strand="closest", divergent="closest"):
+    """One TF: peak table and summits -> output table (one row per peak x target gene), peaks assigned, warnings.
+    same_strand, divergent: overlapping-window rules, see resolve()."""
     if units.empty:
         raise ValueError("no units to assign")
     pos, up, down = units.anchor_pos.to_numpy(), units.up.to_numpy(), units.down.to_numpy()
@@ -154,7 +163,8 @@ def assign(units, g, pk, summits):
         s, c = summits[c0:c0 + CHUNK], c_all[c0:c0 + CHUNK]
         D = (s[:, None] - pos) * sgn
         pi, ui = np.nonzero((D >= up) & (D <= down) & (c[:, None] == u_chrom))
-        h = resolve(pd.DataFrame({"p": pi, "u": ui, "d": np.abs(D[pi, ui]), "s": sgn[ui], "uid": uid[ui]}))
+        h = resolve(pd.DataFrame({"p": pi, "u": ui, "d": np.abs(D[pi, ui]), "s": sgn[ui], "uid": uid[ui]}),
+                    same_strand, divergent)
         pi, ui = h.p.to_numpy(), h.u.to_numpy()
         u = units.iloc[ui]
         out.append(pd.DataFrame({"i": c0 + pi, "gene": u.genes.to_numpy(), "anchor": u.anchor.to_numpy(),
@@ -192,6 +202,11 @@ def main(argv=None):
     ap.add_argument("--operon-cutoff", type=float, default=CUTOFF, help="pair probability that joins two genes (--predict-operons)")
     ap.add_argument("--no-gene-start", action="store_true", help="no start-codon windows; units without a TSS are not assigned")
     ap.add_argument("--no-internal", action="store_true", help="no internal units (operon starts only)")
+    rules = ("closest", "both", "farthest")
+    ap.add_argument("--same-strand", choices=rules, default="closest", help="a summit in windows of several units on one "
+                    "strand: assign the unit with the nearest anchor (closest), all of them (both) or the farthest")
+    ap.add_argument("--divergent", choices=rules, default="closest", help="a summit in windows on both strands (between "
+                    "divergent genes): assign the strand with the nearest anchor (closest), both strands, or the other")
     ap.add_argument("--tss-window", type=win, default="%d,%d" % TSS_WINDOW, help="window around a linked TSS")
     ap.add_argument("--start-window", type=win, default="%d,%d" % START_WINDOW, help="operon-start window around the start codon")
     ap.add_argument("--internal-window", type=win, default="%d,%d" % INTERNAL_WINDOW, help="internal window around the start codon")
@@ -221,7 +236,7 @@ def main(argv=None):
         Path(a.out).mkdir(parents=True, exist_ok=True)
         for path, tf, fmt in zip(a.peaks, tfs, fmts):  # one output file per peak file
             pk, summits = read_peaks(path, fmt)
-            bed, n, w3 = assign(units, g, pk, summits)
+            bed, n, w3 = assign(units, g, pk, summits, a.same_strand, a.divergent)
             for m in w3:
                 warn(f"{tf}: {m}")
             bed.rename(columns={"chrom": "#chrom"}).to_csv(Path(a.out) / f"{tf}_assigned_peaks.bed", sep="\t", index=False)
