@@ -13,12 +13,15 @@ two chromosomes give the expected results on small artificial test data; all nin
 
 ## Requirements
 
-Python ≥ 3.9 with numpy ≥ 1.21 and pandas ≥ 1.4.
+Python ≥ 3.9 with numpy ≥ 1.21 and pandas ≥ 1.4. `pip install git+https://github.com/trouillon-lab/prokapeak`
+(or `pip install .` in a clone) installs them and two commands: `prokapeak`, which runs `assign_targets.py`, and
+`prokapeak-operons`, which runs `predict_operons.py`. Without installing, run the scripts with `python`; the options
+are the same.
 
 ## Usage
 
 ```bash
-python assign_targets.py --gff genome.gff --peaks peaks/*.narrowPeak --operons operons.tsv --tss tss.bed --out out/
+prokapeak --gff genome.gff --peaks peaks/*.narrowPeak --operons operons.tsv --tss tss.bed --out out/
 ```
 
 Only `--gff`, `--peaks` and `--out` are required. `--predict-operons` replaces `--operons` with operons predicted
@@ -150,15 +153,15 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 
 ## Predicted operons
 
-Without an operon map, `predict_operons.py` can predict operons from gene spacing using the method from UniOP (Su,
+Without an operon map, `prokapeak-operons` can predict operons from gene spacing using the method from UniOP (Su,
 Zhang and Söding, bioRxiv 2024, doi:10.1101/2024.11.11.623000). Pairs at or above the cutoff (default 0.5) are joined;
 operons of two or more genes are written in the operon map format.
 
 ```bash
-python predict_operons.py --gff genome.gff --out operons.tsv [--pairs pairs.tsv] [--cutoff 0.5]
+prokapeak-operons --gff genome.gff --out operons.tsv [--pairs pairs.tsv] [--cutoff 0.5]
 ```
 
-`--gff-feature` and `--gff-attribute` work as in `assign_targets.py`. In `assign_targets.py`, `--predict-operons`
+`--gff-feature` and `--gff-attribute` work as in `prokapeak`. In `prokapeak`, `--predict-operons`
 replaces `--operons` and writes `predicted_operons.tsv` and `predicted_operon_pairs.tsv` into `--out`;
 `--operon-cutoff` sets the cutoff. The pair table has one row per pair of consecutive genes:
 

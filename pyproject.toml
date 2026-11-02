@@ -28,8 +28,8 @@ test = ["pytest"]
 Repository = "https://github.com/trouillon-lab/prokapeak"
 
 [project.scripts]
-assign-targets = "assign_targets:main"
-predict-operons = "predict_operons:main"
+prokapeak = "assign_targets:main"
+prokapeak-operons = "predict_operons:main"
 
 [tool.setuptools]
 py-modules = ["assign_targets", "predict_operons"]
