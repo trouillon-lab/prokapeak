@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assign MACS3 peaks to target genes through TSS and gene-start windows.
+"""ProkaPeak: assign MACS3 peaks to target genes through TSS and gene-start windows.
 Checked on small artificial test data (example/)."""
 import argparse
 import re

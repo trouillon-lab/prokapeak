@@ -1,6 +1,6 @@
-# assign_targets.py
+# ProkaPeak
 
-Assigns transcription factor (TF) binding peaks from ChIP-seq or DAP-seq, called with MACS3, to the genes they
+ProkaPeak (`assign_targets.py`) assigns transcription factor (TF) binding peaks from ChIP-seq or DAP-seq, called with MACS3, to the genes they
 probably regulate. A peak is assigned to a gene when its summit (the single base with the highest signal) lies in
 a window around that gene's transcription start site (TSS), or, where no TSS is known, around its start codon.
 Genes transcribed together in one operon are assigned together. Without an operon map, `predict_operons.py`

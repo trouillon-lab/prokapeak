@@ -3,9 +3,9 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "target-predictor"
+name = "prokapeak"
 version = "0.1.0"
-description = "Assign MACS3 peaks to target genes through TSS and gene-start windows"
+description = "ProkaPeak: assign MACS3 peaks to target genes through TSS and gene-start windows"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
