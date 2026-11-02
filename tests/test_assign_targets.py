@@ -65,3 +65,17 @@ def test_overlap_rule_checked():
     h = pd.DataFrame({"p": 0, "u": [0, 1], "d": [10, 300], "s": 1, "uid": [0, 1]})
     with pytest.raises(ValueError, match="nearest"):
         resolve(h, "nearest")
+
+
+# One summit (p = 0) in the windows of four units: + strand at 10 and 300 bp, - strand at 50 and 250 bp from their
+# anchors. The units kept for each --same-strand / --opp-strand pair.
+HITS = pd.DataFrame({"p": 0, "u": [0, 1, 2, 3], "d": [10, 300, 50, 250], "s": [1, 1, -1, -1], "uid": [0, 1, 2, 3]})
+
+
+@pytest.mark.parametrize("same, opp, kept", [
+    ("closest", "closest", [0]), ("closest", "both", [0, 2]), ("closest", "farthest", [2]),
+    ("both", "closest", [0, 1]), ("both", "both", [0, 1, 2, 3]), ("both", "farthest", [2, 3]),
+    ("farthest", "closest", [3]), ("farthest", "both", [1, 3]), ("farthest", "farthest", [1]),
+])
+def test_overlap_rules(same, opp, kept):
+    assert resolve(HITS, same, opp).u.tolist() == kept

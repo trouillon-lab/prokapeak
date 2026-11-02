@@ -9,7 +9,7 @@ predicts operons from gene spacing.
 Status: the default mode (operons + TSS map + start-codon fallback), runs
 without an operon file or without a TSS map, the options `--no-gene-start` and `--no-internal`, and genomes with
 two chromosomes give the expected results on small artificial test data; all nine combinations of
-`--same-strand` and `--opp-strand` give the expected units on a small artificial table of overlapping windows.
+`--same-strand` and `--opp-strand` give the expected units on a small artificial table of overlapping windows (`tests/`).
 
 ## Requirements
 
