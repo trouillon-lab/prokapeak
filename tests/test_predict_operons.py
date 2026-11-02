@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from assign_targets import read_genome
-from predict_operons import predict_operons, prior
+from predict_operons import main, predict_operons, prior
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "example" / "genome.gff"
@@ -103,3 +103,10 @@ def test_three_gene_genome_runs():
                       "strand": ["+", "+", "-"]})
     ops, pairs, w = predict_operons(g)
     assert len(pairs) == 2 and len(w) >= 1
+
+
+def test_command_line_new_files(tmp_path):
+    """The command writes new output files that match example/expected/."""
+    main(["--gff", str(EXAMPLE), "--out", str(tmp_path / "ops.tsv"), "--pairs", str(tmp_path / "pairs.tsv")])
+    for out, name in (("ops.tsv", "predicted_operons.tsv"), ("pairs.tsv", "predicted_operon_pairs.tsv")):
+        assert (tmp_path / out).read_text() == (ROOT / "example" / "expected" / name).read_text(), name

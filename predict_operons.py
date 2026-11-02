@@ -103,7 +103,8 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         ext(a.gff, ".gff", ".gff3")
-        ext(a.out, ".tsv")
+        if Path(a.out).suffix != ".tsv":  # an output: may not exist yet
+            raise ValueError(f"{a.out}: file name must end in .tsv")
         g, w = read_genome(a.gff, a.gff_feature, a.gff_attribute)
         ops, pairs, w2 = predict_operons(g, a.cutoff)
         for m in w + w2:
