@@ -168,7 +168,9 @@ def assign(units, g, pk, summits, same_strand=SAME_STRAND, opp_strand=OPP_STRAND
         u = units.iloc[ui]
         out.append(pd.DataFrame({"i": c0 + pi, "gene": u.genes.to_numpy(), "anchor": u.anchor.to_numpy(),
                                  "distance_to_anchor": D[pi, ui], "operon": u.operon.to_numpy()}))
-    r = pd.concat(out, ignore_index=True).explode("gene")
+    r = pd.concat(out, ignore_index=True).explode("gene", ignore_index=True)
+    near = r.distance_to_anchor.abs().sort_values(kind="stable").index  # one row per peak and gene: nearest anchor
+    r = r.loc[near].drop_duplicates(["i", "gene"]).sort_index()
     p = pk.iloc[r.i.to_numpy()]
     strand, chrom = dict(zip(g.locus, g.strand)), dict(zip(g.locus, g.chrom))
     g_start, g_end = dict(zip(g.locus, g.start - 1)), dict(zip(g.locus, g.end))  # BED, 0-based start

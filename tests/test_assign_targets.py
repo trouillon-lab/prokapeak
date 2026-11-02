@@ -1,10 +1,13 @@
 """assign_targets on example/: the expected outputs, the predicted-operon files, and the input checks."""
 import filecmp
+import io
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pytest
 
-from assign_targets import main
+from assign_targets import assign, build_units, main, read_genome
 
 ROOT = Path(__file__).resolve().parents[1]
 E = ROOT / "example"
@@ -38,3 +41,14 @@ def test_input_errors(tmp_path, args, msg):
         args += ["--peaks", PEAKS[0]]
     with pytest.raises(SystemExit, match=msg):
         main(["--gff", str(E / "genome.gff"), "--out", str(tmp_path)] + args)
+
+
+def test_one_row_per_peak_and_gene():
+    """Operon A,B,C with a 100-bp first gene: a summit 1 bp upstream of A is also in B's internal window."""
+    gff = "".join(f"c\tt\tgene\t{a}\t{b}\t.\t+\t.\tlocus_tag={x}\n" for x, a, b in
+                  [("A", 1001, 1100), ("B", 1121, 2000), ("C", 2021, 3000)])
+    g, _ = read_genome(io.StringIO(gff))
+    units, _ = build_units(g, pd.DataFrame([("op", "A,B,C")]))
+    pk = pd.DataFrame([["c", 999, 1000, "pk", 0, ".", 0.0, 0.0, 0.0, 0]])
+    bed, _, _ = assign(units, g, pk, np.array([1000]), "both", "closest")
+    assert bed.target.tolist() == ["A", "B", "C"] and (bed.distance_to_anchor == -1).all()

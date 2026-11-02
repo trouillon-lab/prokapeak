@@ -144,7 +144,8 @@ Pass windows with `=`, as in `--tss-window=-150,100`, so the leading minus is no
 2. Of several units on one strand, only the one with the nearest anchor is assigned (`--same-strand`).
 3. A summit in windows on both strands (between divergent genes) is assigned only on the strand with the nearest
    anchor (`--opp-strand`).
-4. An assigned unit assigns all its genes.
+4. An assigned unit assigns all its genes; a gene assigned through several units is listed once, through the
+   nearest anchor.
 
 ## Predicted operons
 
