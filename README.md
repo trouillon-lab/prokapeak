@@ -244,9 +244,7 @@ a peak in no window is not listed. With `--predict-operons`, `--out` also holds 
 ## Citation
 
 If you use ProkaPeak, please cite the software archive on Zenodo,
-[doi:10.5281/zenodo.24085614](https://doi.org/10.5281/zenodo.24085614). This DOI always resolves to the latest
-version; each release also has its own DOI, listed on the Zenodo page. "Cite this repository" on the GitHub page
-gives the citation in APA and BibTeX formats.
+[doi:10.5281/zenodo.24085614](https://doi.org/10.5281/zenodo.24085614).
 
 ## License
 
