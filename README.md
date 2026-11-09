@@ -2,7 +2,9 @@
 
 ### A Python package to assign **Proka**ryotic **Peak**s to target genes.
 #### ➡️ [_ProkaPeak web app_](https://prokapeak.trouillonlab.org/)
-&nbsp;
+
+[![PyPI](https://img.shields.io/pypi/v/prokapeak)](https://pypi.org/project/prokapeak/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24085614.svg)](https://doi.org/10.5281/zenodo.24085614)
 
 &nbsp;
 <br clear="left"/>
@@ -238,6 +240,13 @@ a peak in no window is not listed. With `--predict-operons`, `--out` also holds 
 | 16 distance_to_anchor | summit minus anchor, along the target's strand (negative = upstream) |
 
 `prokapeak` prints one line per TF: peaks assigned and number of target genes.
+
+## Citation
+
+If you use ProkaPeak, please cite the software archive on Zenodo,
+[doi:10.5281/zenodo.24085614](https://doi.org/10.5281/zenodo.24085614). This DOI always resolves to the latest
+version; each release also has its own DOI, listed on the Zenodo page. "Cite this repository" on the GitHub page
+gives the citation in APA and BibTeX formats.
 
 ## License
 
