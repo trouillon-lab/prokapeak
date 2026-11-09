@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use ProkaPeak, please cite it as below."
+type: software
+title: "ProkaPeak"
+abstract: >-
+  ProkaPeak assigns transcription factor binding peaks from ChIP-seq, DAP-seq or
+  similar assays in bacteria to the genes they likely regulate.
+authors:
+  - given-names: Alexandre
+    family-names: Dentler
+    affiliation: ETH Zurich
+  - given-names: Julian
+    family-names: Trouillon
+    affiliation: ETH Zurich
+version: 0.1.0
+date-released: 2026-11-09
+license: MIT
+repository-code: "https://github.com/trouillon-lab/prokapeak"
+url: "https://prokapeak.trouillonlab.org/"
+keywords:
+  - ChIP-seq
+  - DAP-seq
+  - MACS3
+  - transcription factor
+  - operon
+  - bacteria
