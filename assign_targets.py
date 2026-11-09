@@ -4,6 +4,7 @@ Checked on small artificial test data (example/)."""
 import argparse
 import re
 import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -45,15 +46,17 @@ def read_table(path, n, what, num=(1, 2, 9)):
 def read_genome(gff, features=("gene", "CDS"), attribute="locus_tag"):
     """GFF3 path or file -> one span per locus (locus, chrom, start, end, strand), list of warnings."""
     rows, types, attrs, w = [], set(), set(), []
-    for line in (gff if hasattr(gff, "read") else open(gff)):
-        f = line.rstrip("\r\n").split("\t")
-        if line.startswith("#") or len(f) < 9:
-            continue
-        types.add(f[2])
-        if f[2] in features:
-            attrs.update(x.partition("=")[0] for x in f[8].split(";"))
-            if m := re.search(rf"(?:^|;){re.escape(attribute)}=([^;]+)", f[8]):
-                rows.append((m.group(1), f[0], int(f[3]), int(f[4]), f[6]))
+    # a path is opened and closed here; a file object passed in is left open for the caller
+    with (nullcontext(gff) if hasattr(gff, "read") else open(gff)) as fh:
+        for line in fh:
+            f = line.rstrip("\r\n").split("\t")
+            if line.startswith("#") or len(f) < 9:
+                continue
+            types.add(f[2])
+            if f[2] in features:
+                attrs.update(x.partition("=")[0] for x in f[8].split(";"))
+                if m := re.search(rf"(?:^|;){re.escape(attribute)}=([^;]+)", f[8]):
+                    rows.append((m.group(1), f[0], int(f[3]), int(f[4]), f[6]))
     g = pd.DataFrame(rows, columns=["locus", "chrom", "start", "end", "strand"])
     split = g.groupby("locus")[["chrom", "strand"]].nunique().max(axis=1) > 1
     if split.any():
