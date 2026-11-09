@@ -1,4 +1,4 @@
-<img align="left" width="170" src="images/ProkaPeak_logo.png" />
+<img align="left" width="170" src="https://raw.githubusercontent.com/trouillon-lab/prokapeak/v0.1.0/images/ProkaPeak_logo.png" />
 
 ### A Python package to assign **Proka**ryotic **Peak**s to target genes.
 #### ➡️ [_ProkaPeak web app_](https://prokapeak.trouillonlab.org/)
